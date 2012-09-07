@@ -41,11 +41,6 @@ public class main extends JavaPlugin {
 	public final Logger logger = Logger.getLogger("Minecraft");
 	public ServerChatPlayerListener playerListener = new ServerChatPlayerListener(this);
 	
-
-	//public static HashMap<String, Location> hashhome = new HashMap<String, Location>();
-	
-	
-
 @Override
 public void onDisable() {
 	
@@ -188,8 +183,7 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 			   
 			   }
 	if (cmd.getName().equalsIgnoreCase("sellland")){ 
-		//player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "This feature is currently not enabled.");
-	
+
         World world1 = player.getWorld();
         RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
         ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
@@ -202,10 +196,7 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 	
 	
 	if (owner2.contains(pn)){
-		//player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "You own this Land!");
-		
-		
-        Boolean bflag = set2.getFlag(DefaultFlag.BUYABLE);
+	        Boolean bflag = set2.getFlag(DefaultFlag.BUYABLE);
         Double pflag = set2.getFlag(DefaultFlag.PRICE);
         
 	if (bflag == null){
