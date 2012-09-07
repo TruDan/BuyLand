@@ -1,0 +1,22 @@
+name: BuyLand
+version: 0.1
+main: me.buyland.buyland.main
+depend: [WorldGuard]
+softdepend: [Vault]
+commands:
+  buyland:
+    description: Buys WorldGuard Land
+    usage: Error! Plugin Is Not Working! Command BuyLand.
+  priceland:
+    description: Checks Price of WorldGuard Land
+    usage: Error! Plugin Is Not Working! Command PriceLand.
+  sellland:
+    description: Sell WorldGuard Land
+    usage: Error! Plugin Is Not Working! Command SellLand.
+  reloadbuyland:
+    description: Reloads Land Config
+    usage: Error! Plugin Is Not Working! Command Reloadbuyland.
+permissions:
+
+        
+        
