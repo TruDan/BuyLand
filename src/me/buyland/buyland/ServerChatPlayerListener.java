@@ -19,8 +19,8 @@ public class ServerChatPlayerListener implements Listener  {
 	}
 	@EventHandler(priority = EventPriority.HIGH)
 	   public void onPlayerjoin(PlayerJoinEvent event){
+		//This adds any user who joins the server to the DB list.
 		Player player = event.getPlayer();
-		
 		String pn = player.getName();
 		
 		plugin.getCustomConfig().addDefault(pn, 0);

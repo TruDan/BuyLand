@@ -35,8 +35,6 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 public class main extends JavaPlugin {
 
-
-		
 	public static main plugin;
 	public final Logger logger = Logger.getLogger("Minecraft");
 	public ServerChatPlayerListener playerListener = new ServerChatPlayerListener(this);
@@ -93,7 +91,6 @@ public void saveCustomConfig() {
 public void onEnable() {
 	
 	
-	//plugin.getServer().getPluginManager().registerEvents(this, this);
 	this.getServer().getPluginManager().registerEvents(new ServerChatPlayerListener(this), this);
 
 	PluginDescriptionFile pdffile = this.getDescription();
@@ -107,7 +104,7 @@ public void onEnable() {
 	final FileConfiguration config = this.getConfig();
 	config.options().header("BuyLand... Besure to make prices have .00 or it may break.");
 	config.addDefault("buyland.defaultprice", 100.00);
-	config.addDefault("buyland.percentsellback", 0.50);
+	config.addDefault("buyland.percentsellback", 1.00);
 	config.addDefault("buyland.maxamountofland", 1);
 	config.options().copyDefaults(true);
 	saveConfig();
@@ -116,7 +113,7 @@ public void onEnable() {
 	getWorldGuard();
 		
     if (!setupEconomy() ) {
-        //log.info(Level.SEVERE, String.format("[%s] - Disabled due to no Vault dependency found!", getDescription().getName()));
+      this.logger.info("Could not load due to Vault not being loaded.");
         getServer().getPluginManager().disablePlugin(this);
         return;
     }
@@ -125,6 +122,7 @@ public void onEnable() {
 	
 }
 
+//This is for Vault.
 private boolean setupEconomy() {
     if (getServer().getPluginManager().getPlugin("Vault") == null) {
         return false;
@@ -145,7 +143,6 @@ private boolean setupChat() {
 
 
 
-
 public WorldGuardPlugin getWorldGuard()
 {
     Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
@@ -157,28 +154,26 @@ public WorldGuardPlugin getWorldGuard()
 } 
 
 
-
-
 public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-	
 	
 	Player player = null;
 	if (sender instanceof Player) {
 		player = (Player) sender;
 	}
-	
  
 	if (args.length == 0){
 		
-		player.sendMessage(ChatColor.GOLD + "BuyLand is a product of chriztopia.com"); 
-		player.sendMessage(ChatColor.GOLD + "Try using /buyland [region_name] or /priceland [region_name] or /sellland [region_name]");  
+		player.sendMessage(ChatColor.BOLD + "BuyLand is a product of chriztopia.com"); 
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Try using /buyland [region_name] or /priceland [region_name] or /sellland [region_name]");  
 	}
 		   if (args.length > 0){
 			   
+			    if (player.isOp()){
 			   if (cmd.getName().equalsIgnoreCase("reloadbuyland")){
-				   if (player.isOp()){
+				  
 					 reloadConfig();  
 					 reloadCustomConfig();
+					 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Config Reloaded!");
 				   }
 			   
 			   }
