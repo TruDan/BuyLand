@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.1
+version: 0.3
 main: me.buyland.buyland.main
 depend: [WorldGuard]
 softdepend: [Vault]
@@ -17,6 +17,15 @@ commands:
     description: Reloads Land Config
     usage: Error! Plugin Is Not Working! Command Reloadbuyland.
 permissions:
-
-        
-        
+    buyland.buy:
+        description: Buys a Region.
+        default: false
+    buyland.sell:
+        description: Sells a Region.
+        default: false
+    buyland.price:
+        description: Prices a Region.
+        default: false
+    buyland.reload:
+        description: Reload the Configs.
+        default: op        
