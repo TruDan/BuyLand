@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.4
+version: 0.5.B
 main: me.buyland.buyland.main
 depend: [WorldGuard]
 softdepend: [Vault]
@@ -22,12 +22,18 @@ commands:
   adminbuyland:
     description: Admin Commands for BuyLand.
     usage: Error! Plugin Is Not Working! Command AdminBuyLand.
+  rentland:
+    description: Rents you land.
+    usage: Error! Plugin Is Not Working! Command RentLand.
 permissions:
     buyland.buy:
         description: Buys a Region.
         default: false
     buyland.sell:
         description: Sells a Region.
+        default: false
+    buyland.rent:
+        description: Rents a Region.
         default: false
     buyland.price:
         description: Prices a Region.
@@ -37,4 +43,4 @@ permissions:
         default: op
     buyland.admin:
         description: Admin Commands for BuyLand.
-        default: op        
+        default: op

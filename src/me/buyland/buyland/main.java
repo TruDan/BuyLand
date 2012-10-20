@@ -4,24 +4,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
-
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -55,7 +52,6 @@ import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-
 
 public class main extends JavaPlugin {
 
@@ -145,6 +141,40 @@ public void savelanguageConfig() {
 }
 
 
+private FileConfiguration RentConfig = null;
+private File RentConfigFile = null;
+
+public void reloadRentConfig() {
+    if (RentConfigFile == null) {
+    	RentConfigFile = new File(getDataFolder(), "rent.yml");
+    }
+    RentConfig = YamlConfiguration.loadConfiguration(RentConfigFile);
+ 
+    // Look for defaults in the jar
+    InputStream defConfigStream = this.getResource("rent.yml");
+    if (defConfigStream != null) {
+        YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+        RentConfig.setDefaults(defConfig);
+    }
+}
+
+public FileConfiguration getRentConfig() {
+    if (RentConfig == null) {
+        this.reloadRentConfig();
+    }
+    return RentConfig;
+}
+
+public void saveRentConfig() {
+    if (RentConfig == null || RentConfigFile == null) {
+    return;
+    }
+    try {
+        getRentConfig().save(RentConfigFile);
+    } catch (IOException ex) {
+        this.getLogger().log(Level.SEVERE, "Could not save config to " + RentConfigFile, ex);
+    }
+}
 
 
 @Override
@@ -158,14 +188,24 @@ public void onEnable() {
 	
 	getlanguageConfig().options().header("BuyLand Language File.");
 	
-	
+	//language file
 	getlanguageConfig().addDefault("buyland.general.permission", "You do not have permission for that command.");	
 	getlanguageConfig().addDefault("buyland.general.reload", "Config reloaded!");
 	getlanguageConfig().addDefault("buyland.general.error1", "Error! Region name was incorrect.");
-	//getlanguageConfig().addDefault("buyland.general.error2", "Error! Enter a Number/Price.");
+	getlanguageConfig().addDefault("buyland.general.error2", "Error! Enter a Number/Price.");
 	
 	getlanguageConfig().addDefault("buyland.admin.forsale", "This Region has been placed back for sale.");
 	
+	
+	getlanguageConfig().addDefault("buyland.rent.forrent", "This land is for rent!");
+	getlanguageConfig().addDefault("buyland.rent.noperm", "You dont have permission to do that!");
+	getlanguageConfig().addDefault("buyland.rent.tenant", "This land currently has a tenant - Time left: ");
+	getlanguageConfig().addDefault("buyland.rent.rentby", "This land is being rented by ");
+	getlanguageConfig().addDefault("buyland.rent.notbe", "This land can not be rented.");
+	getlanguageConfig().addDefault("buyland.rent.cantafford", "%s to buy the land.");
+	getlanguageConfig().addDefault("buyland.rent.error1", "Sorry Rentable land can not be bought nor sold.");
+	
+
 	getlanguageConfig().addDefault("buyland.sell.forsale", "This land is for sale.");
 	getlanguageConfig().addDefault("buyland.sell.back1", "You have sold back the land for ");
 	getlanguageConfig().addDefault("buyland.sell.back2", ". Your balance is: %s");
@@ -183,11 +223,19 @@ public void onEnable() {
 	getlanguageConfig().addDefault("buyland.price.cost", "This land is buyable and costs: ");
 	getlanguageConfig().addDefault("buyland.price.max1", "You have ");
 	getlanguageConfig().addDefault("buyland.price.max2", " pieces of land. The Max is ");
-	
 	getlanguageConfig().addDefault("buyland.price.dontown", "Sorry this land is not buyable.");
-	
 	getlanguageConfig().options().copyDefaults(true);
 	this.savelanguageConfig();
+	
+	getRentConfig().options().header("Rent File");
+	getRentConfig().addDefault("rent.placeholder.time", 0);
+	getRentConfig().addDefault("rent.placeholder.rentable", true);
+	getRentConfig().addDefault("rent.placeholder.world", "world");
+	getRentConfig().addDefault("rent.placeholder.costpermin", 1.0);
+	
+
+	getRentConfig().options().copyDefaults(true);
+	this.saveRentConfig();
 	
 	getCustomConfig().options().header("BuyLand DB File. Used for keeping track of how many plots a user has.");
 	getCustomConfig().addDefault("user", 0);
@@ -200,18 +248,85 @@ public void onEnable() {
 	config.addDefault("buyland.percentsellback", 1.00);
 	config.addDefault("buyland.maxamountofland", 1);
 	config.addDefault("buyland.resetlandonsale", true);
+	config.addDefault("buyland.landpriority", 1);
+	config.addDefault("buyland.usepriceperblock", false);
+	config.addDefault("buyland.defaultpriceperblock", 1.00);
 	config.options().copyDefaults(true);
 	saveConfig();
 	
 	getWorldGuard();
+	
+	getServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
+		            public void run() {
+		            	
+
+ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
+		    for (String regionName : yaml.getKeys(false)) {
+		          
+		        if (yaml.getBoolean(regionName + ".rentable") == false && System.currentTimeMillis() > yaml.getLong(regionName + ".time")) {
+		       
+		        	getServer().broadcastMessage(ChatColor.RED + "BuyLand: " + ChatColor.YELLOW + regionName + " is now rentable!");
+		        	getRentConfig().set("rent." + regionName + ".rentable", true);
+		        	String world1 = yaml.getString(regionName + ".world");
+		        	
+		        	World world = Bukkit.getWorld(world1);
+		        
+		    		RegionManager regionManager = getWorldGuard().getRegionManager(world);
+		    		ProtectedRegion set2 = regionManager.getRegionExact(regionName);
+		    		int x = set2.getMinimumPoint().getBlockX();
+		    		int y = set2.getMinimumPoint().getBlockY();
+		    		int z = set2.getMinimumPoint().getBlockZ();
+		    		Vector v1 = new Vector(x,y,z);
+		    		
+		    		File file = new File(getDataFolder() + File.separator + "data" + File.separator + regionName + ".schematic");
+		    		ResetMap(file, v1, world);
+		    		set2.setFlag(DefaultFlag.GREET_MESSAGE, "This Land is for rent!");
+		        	DefaultDomain du = set2.getOwners();
+		        	
+		        	String pn = du.toString();
+		    		
+		    	   	  DefaultDomain dd = new DefaultDomain();
+		    		    dd.removePlayer(pn);
+		    		 set2.setOwners(dd);
+		    	    try
+		    	    {
+		    	    	regionManager.save();
+		    	    }
+		    	     catch (Exception exp)
+		    	    { }
+		    		
+		            	    }
+	        	saveRentConfig();
+	        	reloadRentConfig();
+	        	
+	        	
+		            	} 
+
+
+		            }
+		        }, 20L, 600L);
+	
+	
 			
     if (!setupEconomy() ) {
       this.logger.info("Could not load due to Vault not being loaded.");
         getServer().getPluginManager().disablePlugin(this);
         return;
     }
-    
     setupChat();	
+    
+//Check for data folder then create it.   
+    File f = new File(getDataFolder() + File.separator + "data" + File.separator + "placeholder.txt");
+    if (!f.exists()) {
+    f.getParentFile().mkdirs();
+    try {
+   
+    f.createNewFile();
+    } catch (IOException ex) {
+    // Handle error
+    }
+    }
+    
 }
 
 
@@ -230,7 +345,7 @@ public static void ResetMap(File file, Vector v, World worldf) {
          //   logger.warning("'ResetMap()' MaxChangedBlocksException");
         }
     } else {
-      //  logger.warning(("File does not exist."));
+       // Logger.warning(("File does not exist."));
     }
 }
 
@@ -273,10 +388,11 @@ public static Selection getWorldEditSelection(Player ply) {
     return null;
 }
 
-public void AddProtectedRegion(String p1, String world, int x1, int y1, int z1, int x2, int y2, int z2, String name)
-{       
 
-    World world1 = Bukkit.getWorld(world);
+public void AddProtectedRegion(String p1, String world, int x1, int y1, int z1, int x2, int y2, int z2, String name, String abc)
+{
+if (abc == "buy"){
+	    World world1 = Bukkit.getWorld(world);
     // get the region manager 
     RegionManager rm = this.getWorldGuard().getRegionManager(world1);
     // make a cuboid with two points to create a 3d cube in the world
@@ -290,6 +406,7 @@ public void AddProtectedRegion(String p1, String world, int x1, int y1, int z1, 
     String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.forsale"));
 	
     pr.setFlag(DefaultFlag.GREET_MESSAGE, convertedforsale);
+    pr.setPriority(this.getConfig().getInt("buyland.landpriority"));
     
     DefaultDomain dd = new DefaultDomain();
     // add the player to the region      
@@ -303,11 +420,51 @@ public void AddProtectedRegion(String p1, String world, int x1, int y1, int z1, 
     {
         rm.save();
     }
-
      catch (Exception exp)
-
-
     { }
+}
+
+
+if (abc == "rent"){
+    World world1 = Bukkit.getWorld(world);
+// get the region manager 
+RegionManager rm = this.getWorldGuard().getRegionManager(world1);
+// make a cuboid with two points to create a 3d cube in the world
+BlockVector b2 = new BlockVector(x1, y1, z1);
+BlockVector b1 = new BlockVector(x2, y2, z2);
+// create the protected region
+ProtectedCuboidRegion pr = new ProtectedCuboidRegion(name, b1, b2);
+rm.addRegion(pr);
+
+//pr.setFlag(DefaultFlag.BUYABLE, true);
+String forrent = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.forrent"));
+
+pr.setFlag(DefaultFlag.GREET_MESSAGE, forrent);
+pr.setPriority(this.getConfig().getInt("buyland.landpriority"));
+
+this.getRentConfig().set("rent." + name + ".time", 0);
+this.getRentConfig().set("rent." + name + ".rentable", true);
+this.getRentConfig().set("rent." + name + ".world", world);
+this.getRentConfig().set("rent." + name + ".costpermin", 1.0);
+this.saveRentConfig();
+this.reloadRentConfig();
+
+DefaultDomain dd = new DefaultDomain();
+// add the player to the region      
+dd.addPlayer(p1);
+// set the player as the owner
+pr.setOwners(dd);
+
+logger.info("BuyLand: Added region: " + name);
+
+try
+{
+    rm.save();
+}
+ catch (Exception exp)
+{ }
+}
+
 
 }
 
@@ -341,14 +498,59 @@ private void saveSchematic(Location loc1, Location loc2, String schematic, Playe
         return;
     }
  
-    //te.logUtil.debug(min + " - " + max);
- 
     editSession.enableQueue();
     CuboidClipboard clipboard = new CuboidClipboard(max.subtract(min).add(new Vector(1, 1, 1)), min);
     clipboard.copy(editSession);
     clipboard.saveSchematic(saveFile);
     editSession.flushQueue();
 }
+
+
+
+public static String elapsedTime(long start, long end){
+
+String auxRet= "";
+
+long aux = end - start;
+long days=0, hours=0, minutes = 0, seconds = 0;
+//days
+if (aux > 24*60*60*1000){
+days = aux/(24*60*60*1000);
+}
+aux = aux%(24*60*60*1000);
+//hours
+if (aux > 60*60*1000){
+hours = aux/(60*60*1000);
+}
+aux = aux%(60*60*1000);
+//minutes
+if (aux > 60*1000){
+minutes = aux/(60*1000);
+}
+aux = aux%(60*1000);
+//seconds
+if (aux > 1000){
+seconds = aux/(1000);
+}
+//milliseconds = aux%1000;
+
+if(days>0){
+auxRet = days +" days " ;
+}
+if(days != 0 || hours>0){
+auxRet += hours+ " hours " ;
+}
+if(days != 0 || hours!= 0 || minutes>0){
+auxRet += minutes +" minutes " ;
+}
+if(days != 0 || hours!= 0 || minutes!=0 || seconds>0){
+auxRet += seconds +" seconds " ;
+}
+//auxRet += milliseconds +" milliseconds ";
+
+return auxRet;
+}
+
 
 
 
@@ -366,13 +568,12 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 							 reloadConfig();  
 							 reloadCustomConfig();
 							 reloadlanguageConfig();
+							 reloadRentConfig();
 								String convertedgeneral2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.reload"));
-								
 							 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral2);
 						   }else{
 								String convertedgeneral = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.permission"));
 								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral);
-	
 						   }
 					   
 					   }else{
@@ -381,11 +582,29 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 							
 							
 		player.sendMessage(ChatColor.RED + "BuyLand: V" +  pdffile.getVersion() + ChatColor.GOLD + " is a product of chriztopia.com");
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland [region_name] or /priceland [region_name] or /sellland [region_name]");  
+		if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.*")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland [region_name] - Buy land");  
+		}
+		if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/priceland [region_name] - Prices land thats buyable");  
+		}
+		if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.*")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/sellland [region_name] - Sell land");  
+		}
+		if (player.hasPermission("buyland.rent") || player.hasPermission("buyland.*")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] cost - Check cost of rentable land");  
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] 1 minute - Rent land");  
+		}
 		if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
-//Admin HELP
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl forsale [region_name] or /abl save [region_name] or /abl price [region_name] [cost]");  
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl reset [region_name]");  
+			player.sendMessage(" ");
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.YELLOW + "Admin Commands");
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl forsale [region_name] - Makes a premade region buyable");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl save [region_name] - Select with WorldEdit first");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl price [region_name] [cost] - Sets a price for buyable land");  
+			
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl reset [region_name] - Resets buyable land");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland save [region_name] - Select with WorldEdit first");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] reset - Reset rentable land");  
 			
 		}
 					   }
@@ -396,22 +615,41 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 if (cmd.getName().equalsIgnoreCase("abl") || (cmd.getName().equalsIgnoreCase("adminbuyland"))){ 
 if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 	if (args[0].equalsIgnoreCase("save")){
+		if (args.length == 1 ){
+        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
+        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+			
+		}else{
 //StartSaveArg
 		int x1 = getWorldEditSelection(player).getMaximumPoint().getBlockX();
 		int y1 = getWorldEditSelection(player).getMaximumPoint().getBlockY();
 		int z1 = getWorldEditSelection(player).getMaximumPoint().getBlockZ();
+		
 		int x2 = getWorldEditSelection(player).getMinimumPoint().getBlockX();
 		int y2 = getWorldEditSelection(player).getMinimumPoint().getBlockY();
 		int z2 = getWorldEditSelection(player).getMinimumPoint().getBlockZ();
+		
 		String d1 = player.getWorld().getName();
-		String p1 = player.getName();
-//DEBUG		player.sendMessage("Player Name: " + p1 +" WorldNAME: " + d1 + " X1: " + x1 + " Y1: " + y1 + " Z1: " + z1 + " X2: " + x2 + " Y2: " + y2 + " Z2: " + z2 + " Testregion");
-		AddProtectedRegion(p1, d1, x1, y1, z1, x2, y2, z2, args[1]);		
+		String p1 = player.getName();		
+	     AddProtectedRegion(p1, d1, x1, y1, z1, x2, y2, z2, args[1], "buy");
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Region Added!");
 //EndSaveArg
 	}
+	}
 	
 	if (args[0].equalsIgnoreCase("price")){
+		
+		if (args.length == 1 ){
+        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
+        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+			
+		}else{
+		
+		if (args.length == 2 ){
+        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error2"));
+        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+			
+		}else{
 		
 		//StartPriceArg
 		World world2 = player.getWorld();
@@ -434,39 +672,52 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 		    { }
 	player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Price Added!");
 		//EndPriceArg
-        
+        }
+        }
 	}
 			}
 	
 	if (args[0].equalsIgnoreCase("reset")){
 //StartResetArg
+		if (args.length == 1 ){
+        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
+        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+			
+		}else{
 		World world = player.getWorld();
 		RegionManager regionManager = this.getWorldGuard().getRegionManager(world);
 		ProtectedRegion set2 = regionManager.getRegionExact(args[1]);
 
 		if(regionManager.getRegionExact(args[1]) == null){
         	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
-			
         	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
      
         }else{
-		
-		
 		int x = set2.getMinimumPoint().getBlockX();
 		int y = set2.getMinimumPoint().getBlockY();
 		int z = set2.getMinimumPoint().getBlockZ();
 		Vector v1 = new Vector(x,y,z);
 		//Location loc = new Location(world, x,y,z);
 		File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[1] + ".schematic");
-
+		if (this.getConfig().getBoolean("buyland.resetlandonsale") == true){
+		
 		ResetMap(file, v1, world);
 	player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Region Reset to Default!");
+		}else{
+			player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Set resetlandonsale to true in the config file to use this feature!");
+		}
 //EndResetArg
+        }
         }
 			}
 	
 	
 				if (args[0].equalsIgnoreCase("forsale")){
+					if (args.length == 1 ){
+			        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
+			        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+						
+					}else{
 //FORSALE Arg
 				World world1 = player.getWorld();
 			    RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
@@ -474,7 +725,6 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 				
 				if(regionManager.getRegionExact(args[1]) == null){
 		        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
-					
 		        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
 		     
 		        }else{
@@ -530,7 +780,9 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 				Vector v1 = new Vector(x,y,z);
 				//Location loc = new Location(world, x,y,z);
 				File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[1] + ".schematic");
+				if (this.getConfig().getBoolean("buyland.resetlandonsale") == true){
 				ResetMap(file, v1, world);
+				}
 //END RESET TO DEFAULT	
 				    try
 				    {
@@ -539,28 +791,610 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 				     catch (Exception exp)
 				    { }
 				}
-				
-				
-					
+
 //FORSALE END0
 		        }
 				}	
+}
 			}
 			}
-			   
-	   
-//SELLLAND COMMAND	
-	if (cmd.getName().equalsIgnoreCase("sellland")){ 
-if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.*")){
+
+
+//RentLand COMMAND	
+
+	if (cmd.getName().equalsIgnoreCase("rentland")){
+	
+		if (player.hasPermission("buyland.rent") || player.hasPermission("buyland.*")){
+
+			//top
+
+
+if (args.length == 2 && args[0].equalsIgnoreCase("save")){
+			if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
+					
+				//StartSaveArg
+						int x1 = getWorldEditSelection(player).getMaximumPoint().getBlockX();
+						int y1 = getWorldEditSelection(player).getMaximumPoint().getBlockY();
+						int z1 = getWorldEditSelection(player).getMaximumPoint().getBlockZ();
+						
+						int x2 = getWorldEditSelection(player).getMinimumPoint().getBlockX();
+						int y2 = getWorldEditSelection(player).getMinimumPoint().getBlockY();
+						int z2 = getWorldEditSelection(player).getMinimumPoint().getBlockZ();
+						
+						String d1 = player.getWorld().getName();
+						String p1 = player.getName();		
+					     AddProtectedRegion(p1, d1, x1, y1, z1, x2, y2, z2, args[1], "rent");
+						player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Region Added!");
+				//EndSaveArg
+				}else{
+					
+					String rentperm = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.noperm"));
+
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.DARK_RED + rentperm);
+				}
+			
+			}else{
         World world1 = player.getWorld();
         RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
 
         if(regionManager.getRegionExact(args[0]) == null){
+        	//region does not exist
 			String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
+        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+        }else{  
+        
+        	if (this.getRentConfig().contains("rent." + args[0] + ".time")){
+				
+    		long end = this.getRentConfig().getLong("rent." + args[0] + ".time");
+    		long start = System.currentTimeMillis();
+			if (args.length == 2 && args[1].equalsIgnoreCase("time")){
+				if (start > end){
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Time left for " + args[0] + ": 0 - This land is rentable!");
+				}else{
+				
+				player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Time left for " + args[0] + ": " + elapsedTime(start, end));
+				}
+			}else{
+				
+				if (args.length == 2 && args[1].equalsIgnoreCase("cost")){
+					double s = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") / 2;
+					double m = this.getRentConfig().getDouble("rent." + args[0] +".costpermin");
+					double h = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 60;
+					double d = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 1440;
+					
+					
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "The cost of " + args[0] + " is: ");
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Second = " + s);
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Minute = " + m);
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Hour = " + h);
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Day = " + d);
+				}else{		
+				
+				if (args.length == 2 && args[1].equalsIgnoreCase("reset")){
+if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
+					
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + args[0] + " has been reset!");
+					
+					getRentConfig().set("rent." + args[0] + ".time", 0);
+					getRentConfig().set("rent." + args[0] + ".rentable", true);
+					
+					ProtectedRegion set3 = regionManager.getRegionExact(args[0]);	
+					//This is used for Loading Schematics   	
+								   	   	World world = player.getWorld();
+								   	   	int x = set3.getMinimumPoint().getBlockX();
+								   	   	int y = set3.getMinimumPoint().getBlockY();
+								   	   	int z = set3.getMinimumPoint().getBlockZ();
+								   	   	Vector v1 = new Vector(x,y,z);
+								   	   	File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[0] + ".schematic");
+								   	   	ResetMap(file, v1, world);
+								   	//End of Schematics
+								   	   	
+							        	DefaultDomain du = set3.getOwners();
+							        	
+										String forrent = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.forrent"));
+
+							        	set3.setFlag(DefaultFlag.GREET_MESSAGE, forrent);
+							        	String pn = du.toString();
+							    		
+							    	   	  DefaultDomain dd = new DefaultDomain();
+							    		    dd.removePlayer(pn);
+							    		 set3.setOwners(dd);
+							    		 saveRentConfig();
+							    		 reloadRentConfig();
+					
+							    		    try
+							    		    {
+							    		    	regionManager.save();
+							    		    }
+							    		     catch (Exception exp)
+							    		    { }
+				}else{
+					
+					String rentperm = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.noperm"));
+
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.DARK_RED + rentperm);
+				}
+
+					
+				}else{
+				if (args.length == 1 ){
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Try /rentland [region] 1 second");
+				}else{
+				
+			if (args.length == 2 ){
+				player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Try /rentland [region] 1 second");
+				
+		}else{
+    		
+if (this.getRentConfig().getBoolean("rent." + args[0] + ".rentable") == false && start > end){
+		ProtectedRegion set3 = regionManager.getRegionExact(args[0]);	
+		
+		getRentConfig().set("rent." + args[0] + ".time", 0);
+		getRentConfig().set("rent." + args[0] + ".rentable", true);
+		//This is used for Loading Schematics   	
+					   	   	World world = player.getWorld();
+					   	   	int x = set3.getMinimumPoint().getBlockX();
+					   	   	int y = set3.getMinimumPoint().getBlockY();
+					   	   	int z = set3.getMinimumPoint().getBlockZ();
+					   	   	Vector v1 = new Vector(x,y,z);
+					   	   	File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[0] + ".schematic");
+					   	   	ResetMap(file, v1, world);
+					   	//End of Schematics
+					   	   	
+				        	DefaultDomain du = set3.getOwners();
+				        
+							String forrent = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.forrent"));
+
+				        	set3.setFlag(DefaultFlag.GREET_MESSAGE, forrent);
+				        	String pn = du.toString();
+				    		
+				    	   	  DefaultDomain dd = new DefaultDomain();
+				    		    dd.removePlayer(pn);
+				    		 set3.setOwners(dd);
+				    		 
+				    		 saveRentConfig();
+				    		 reloadRentConfig();
+				    		 
+				    		    try
+				    		    {
+				    		    	regionManager.save();
+				    		    }
+				    		     catch (Exception exp)
+				    		    { }
+		
+        }
+
+//if (this.getRentConfig().getBoolean("rent." + args[0] + ".rentable") == true){
+		if (start < end){
+
+//----------------
+
+ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+DefaultDomain owner = set2.getOwners();
+	String owner2 = owner.toPlayersString();
+	String pn = player.getName().toLowerCase();
+	
+	if (owner2.contains(pn)){
+    	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Time left: " + elapsedTime(start, end));
+String s = args[1];	
+long timea = Long.parseLong(s);
+
+
+if (args[2].equalsIgnoreCase("s") || args[2].equalsIgnoreCase("sec") || args[2].equalsIgnoreCase("second")){
+
+	
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") / 2;
+	double pflag = aflag * Double.valueOf(args[1]);
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Adding " + args[1] + " Second(s) to " + args[0] + ". Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+		
+	
+long time = timea * 1000L;
+long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
+this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
+this.saveRentConfig();
+this.reloadRentConfig();
+
+} else {
+String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+}
+
+}
+
+if (args[2].equalsIgnoreCase("m") || args[2].equalsIgnoreCase("min") || args[2].equalsIgnoreCase("minute")){
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin");
+	double pflag = aflag * Double.valueOf(args[1]);
+
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+		
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Adding " + args[1] + " Minute(s) to " + args[0] + ". Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+		
+
+	long time = timea * 60000L;
+long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
+this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
+this.saveRentConfig();
+this.reloadRentConfig();
+
+} else {
+String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+}
+
+
+}
+
+if (args[2].equalsIgnoreCase("h") || args[2].equalsIgnoreCase("hour")){
+	
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 60;
+	double pflag = aflag * Double.valueOf(args[1]);
+
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Adding " + args[1] + " Hour(s) to " + args[0] + ". Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+	
+	
+long time = timea * 3600000L;
+long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
+this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
+this.saveRentConfig();
+this.reloadRentConfig();
+
+} else {
+String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+}
+
+}
+
+if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
+	
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 1440;
+	double pflag = aflag * Double.valueOf(args[1]);
+
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Adding " + args[1] + " Day(s) to " + args[0] + ". Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+	
+	long time = timea * 86400000L;
+	long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
+	this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
+
+	this.saveRentConfig();
+	this.reloadRentConfig();
+
+	} else {
+	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+	}
+	
+	
+}
+	}else{
+	
+		String renthasten = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.tenant"));
+
+   player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + renthasten + elapsedTime(start, end));		
+	}
+//------------------------					
+				}else{
+
+String s = args[1];	
+long timea = Long.parseLong(s);
+
+if (args[2].equalsIgnoreCase("s") || args[2].equalsIgnoreCase("sec") || args[2].equalsIgnoreCase("second")){
+
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") / 2;
+	double pflag = aflag * Double.valueOf(args[1]);
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+		sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Renting " + args[0] + " for " + args[1] + " Second(s). Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+	
+	long time = timea * 1000L;
+this.getRentConfig().set("rent." + args[0] +".time", System.currentTimeMillis() + time);
+this.getRentConfig().set("rent." + args[0] +".world", player.getWorld().getName());
+this.getRentConfig().set("rent." + args[0] +".rentable", false);
+
+//Set User As Owner
+String p1 = player.getName();
+ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+DefaultDomain dd = new DefaultDomain();
+dd.addPlayer(p1);
+set2.setOwners(dd);
+
+String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
+
+set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+set2.setFlag(DefaultFlag.BUYABLE, false);
+
+//Start Schematics
+World world2 = player.getWorld();
+int x4 = set2.getMinimumPoint().getBlockX();
+int y4 = set2.getMinimumPoint().getBlockY();
+int z4 = set2.getMinimumPoint().getBlockZ();
+Location loc1 = new Location(world2, x4,y4,z4);
+int x1 = set2.getMaximumPoint().getBlockX();
+int y1 = set2.getMaximumPoint().getBlockY();
+int z1 = set2.getMaximumPoint().getBlockZ();
+Location loc2 = new Location(world2, x1,y1,z1);
+String name = args[0];
+		try {
+			saveSchematic(loc1, loc2, name, player);
+		} catch (EmptyClipboardException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DataException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+//END schematics
+
+//Set as not for rent.
+this.saveRentConfig();
+this.reloadRentConfig();
+
+} else {
+String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+}
+}
+
+
+if (args[2].equalsIgnoreCase("m") || args[2].equalsIgnoreCase("min") || args[2].equalsIgnoreCase("minute")){
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin");
+	double pflag = aflag * Double.valueOf(args[1]);
+
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Renting " + args[0] + " for " + args[1] + " Minute(s). Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+
+	
+	long time = timea * 60000L;
+this.getRentConfig().set("rent." + args[0] +".time", System.currentTimeMillis() + time);
+this.getRentConfig().set("rent." + args[0] +".world", player.getWorld().getName());
+this.getRentConfig().set("rent." + args[0] +".rentable", false);
+
+
+//Set User As Owner
+String p1 = player.getName();
+ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+DefaultDomain dd = new DefaultDomain();
+dd.addPlayer(p1);
+set2.setOwners(dd);
+
+String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
+
+set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+set2.setFlag(DefaultFlag.BUYABLE, false);
+
+//Start Schematics
+World world3 = player.getWorld();
+int x7 = set2.getMinimumPoint().getBlockX();
+int y7 = set2.getMinimumPoint().getBlockY();
+int z7 = set2.getMinimumPoint().getBlockZ();
+Location loc1 = new Location(world3, x7,y7,z7);
+int x1 = set2.getMaximumPoint().getBlockX();
+int y1 = set2.getMaximumPoint().getBlockY();
+int z1 = set2.getMaximumPoint().getBlockZ();
+Location loc2 = new Location(world3, x1,y1,z1);
+String name = args[0];
+		try {
+			saveSchematic(loc1, loc2, name, player);
+		} catch (EmptyClipboardException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DataException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+//END schematics
+
+//Set as not for rent.
+this.saveRentConfig();
+this.reloadRentConfig();
+
+	} else {
+	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+	}
+
+}
+
+if (args[2].equalsIgnoreCase("h") || args[2].equalsIgnoreCase("hour")){
+	
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 60;
+	double pflag = aflag * Double.valueOf(args[1]);
+
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Renting " + args[0] + " for " + args[1] + " Hour(s). Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+
+	
+long time = timea * 3600000L;
+this.getRentConfig().set("rent." + args[0] +".time", System.currentTimeMillis() + time);
+this.getRentConfig().set("rent." + args[0] +".world", player.getWorld().getName());
+this.getRentConfig().set("rent." + args[0] +".rentable", false);
+
+//Set User As Owner
+String p1 = player.getName();
+ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+DefaultDomain dd = new DefaultDomain();
+dd.addPlayer(p1);
+set2.setOwners(dd);
+
+String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
+
+set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+set2.setFlag(DefaultFlag.BUYABLE, false);
+
+//Start Schematics
+World world4 = player.getWorld();
+int x3 = set2.getMinimumPoint().getBlockX();
+int y3 = set2.getMinimumPoint().getBlockY();
+int z3 = set2.getMinimumPoint().getBlockZ();
+Location loc1 = new Location(world4, x3,y3,z3);
+int x1 = set2.getMaximumPoint().getBlockX();
+int y1 = set2.getMaximumPoint().getBlockY();
+int z1 = set2.getMaximumPoint().getBlockZ();
+Location loc2 = new Location(world4, x1,y1,z1);
+String name = args[0];
+		try {
+			saveSchematic(loc1, loc2, name, player);
+		} catch (EmptyClipboardException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DataException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+//END schematics
+
+//Set as not for rent.
+this.saveRentConfig();
+this.reloadRentConfig();
+
+	} else {
+	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+	}
+}
+
+if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
+	
+	double aflag = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 1440;
+	double pflag = aflag * Double.valueOf(args[1]);
+
+	EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
+	if(r.transactionSuccess()) {
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Renting " + args[0] + " for " + args[1] + " Day(s). Cost: %s Balance: %s", econ.format(r.amount), econ.format(r.balance)));
+	
+	long time = timea * 86400000L;
+	this.getRentConfig().set("rent." + args[0] +".time", System.currentTimeMillis() + time);
+	this.getRentConfig().set("rent." + args[0] +".world", player.getWorld().getName());
+	this.getRentConfig().set("rent." + args[0] +".rentable", false);
+
+//Set User As Owner
+	String p1 = player.getName();
+	ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+	DefaultDomain dd = new DefaultDomain();
+	dd.addPlayer(p1);
+	set2.setOwners(dd);
+	
+	String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
+
+	set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+	set2.setFlag(DefaultFlag.BUYABLE, false);
+
+	//Start Schematics
+	World world5 = player.getWorld();
+	int x5 = set2.getMinimumPoint().getBlockX();
+	int y5 = set2.getMinimumPoint().getBlockY();
+	int z5 = set2.getMinimumPoint().getBlockZ();
+	Location loc1 = new Location(world5, x5,y5,z5);
+	int x1 = set2.getMaximumPoint().getBlockX();
+	int y1 = set2.getMaximumPoint().getBlockY();
+	int z1 = set2.getMaximumPoint().getBlockZ();
+	Location loc2 = new Location(world5, x1,y1,z1);
+	String name = args[0];
+			try {
+				saveSchematic(loc1, loc2, name, player);
+			} catch (EmptyClipboardException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (DataException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		
+	//END schematics
+	
+	//Set as not for rent.
+	this.saveRentConfig();
+	this.reloadRentConfig();
+	
+	
+	} else {
+	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
+	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
+	}
+	
+	}
+}
+		
+		
+	}
+        
+	    try
+	    {
+	    	regionManager.save();
+	    }
+	     catch (Exception exp)
+	    { }
+        
+		}
+				}
+
+				//bottom
+				}
+			}
+        	
 			
+			}else{
+					
+					String cannot = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.notbe"));
+
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + cannot);
+				}
+		
+	}
+			
+		}
+		}
+	}
+	
+
+	
+//SELLLAND COMMAND	
+	if (cmd.getName().equalsIgnoreCase("sellland")){ 
+if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.*")){
+	
+	
+	if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
+		
+    	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.error1"));
+    	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+
+	}else{
+	
+        World world1 = player.getWorld();
+        RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
+
+        if(regionManager.getRegionExact(args[0]) == null){
+        	//region does not exist
+			String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.error1"));
         	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
      
         }else{  
+
+        	
   ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
 DefaultDomain owner = set2.getOwners();
 	String owner2 = owner.toPlayersString();
@@ -583,18 +1417,17 @@ DefaultDomain owner = set2.getOwners();
 	String convertedl1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.back1"));
 	String convertedl2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.back2"));
 	
-		
 		EconomyResponse r = econ.depositPlayer(player.getName(), finalp);
          player.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedl1 + finalp + convertedl2, econ.format(r.balance)));
 
 		String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.forsale"));
 		
-
    	  DefaultDomain dd = new DefaultDomain();
 	    dd.removePlayer(pn);
 	 set2.setOwners(dd);
 	 set2.setFlag(DefaultFlag.BUYABLE, true);
 	 set2.setFlag(DefaultFlag.GREET_MESSAGE, convertedforsale);
+	 set2.setPriority(this.getConfig().getInt("buyland.landpriority"));
 	 
 		String nm = player.getName();
 		int numofland = this.getCustomConfig().getInt(nm);
@@ -631,6 +1464,7 @@ DefaultDomain owner = set2.getOwners();
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedownland);
 	}
 }
+}
 	}else{
 		String convertedgeneral = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.permission"));
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral);
@@ -640,6 +1474,18 @@ DefaultDomain owner = set2.getOwners();
 //BUYLAND COMMAND!
 	if (cmd.getName().equalsIgnoreCase("buyland")){
 	if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.*")){
+		
+		
+		if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
+			
+        	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.error1"));
+			
+        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+
+		
+		}else{
+		
+
         World world1 = player.getWorld();
         RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
         if(regionManager.getRegionExact(args[0]) == null){
@@ -648,7 +1494,11 @@ DefaultDomain owner = set2.getOwners();
         	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
      
         }else{
-        ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+        	
+			//BETA AREA
+			World world2 = player.getWorld();
+		    RegionManager regionManager1 = this.getWorldGuard().getRegionManager(world2);
+			ProtectedRegion set2 = regionManager1.getRegionExact(args[0]);
         
         Boolean bflag = set2.getFlag(DefaultFlag.BUYABLE);
         Double pflag = set2.getFlag(DefaultFlag.PRICE);
@@ -656,8 +1506,18 @@ DefaultDomain owner = set2.getOwners();
 	if (bflag == null){
 		bflag = false;
 	}
+	
 	if (pflag == null){
+		if (this.getConfig().getBoolean("buyland.usepriceperblock") == true){
+			//BETA AREA
+	        	int size =set2.volume();
+	        	//player.sendMessage("Area of blocks: " + size);
+	        	int ppb = this.getConfig().getInt("buyland.defaultpriceperblock");
+	        	pflag = (double)size * ppb;
+	        //BETA AREA
+		}else{
 	pflag = this.getConfig().getDouble("buyland.defaultprice");
+		}
 	}
 	
 	String nm = player.getName();
@@ -701,8 +1561,7 @@ if (numofland +1 > maxofland){
     	 set2.setOwners(dd);
 //Start Schematics
     	 World world = player.getWorld();
-    	// RegionManager regionManager = this.getWorldGuard().getRegionManager(world);
-    	// ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+
     	 int x = set2.getMinimumPoint().getBlockX();
     	 int y = set2.getMinimumPoint().getBlockY();
     	 int z = set2.getMinimumPoint().getBlockZ();
@@ -712,6 +1571,7 @@ if (numofland +1 > maxofland){
     	 int z1 = set2.getMaximumPoint().getBlockZ();
     	 Location loc2 = new Location(world, x1,y1,z1);
     	 String name = args[0];
+    		if (this.getConfig().getBoolean("buyland.resetlandonsale") == true){
     	 		try {
     	 			saveSchematic(loc1, loc2, name, player);
     	 		} catch (EmptyClipboardException e) {
@@ -724,6 +1584,7 @@ if (numofland +1 > maxofland){
     	 			// TODO Auto-generated catch block
     	 			e.printStackTrace();
     	 		}
+    		}
     	 
     	 
 //END schematics
@@ -747,14 +1608,15 @@ if (numofland +1 > maxofland){
 	    
  }else{
 	  String convertednonbuy = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.dontown"));
-		
-	 
 	 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertednonbuy);
  }
 
  
 	}
         }
+        
+	}
+        
 	}else{
 		String convertedgeneral = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.permission"));
 		
@@ -762,14 +1624,17 @@ if (numofland +1 > maxofland){
 	}
 	
 	
+	
 		   }
-			   //END of buyLAND
-			   
+			   //END of buyLAND			
+
+	
 			   
 
 //PRICELAND COMMAND
 if (cmd.getName().equalsIgnoreCase("priceland")){ 
-if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){					
+if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
+	
 				        World world1 = player.getWorld();
 				        RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
 				        
@@ -778,21 +1643,46 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
 							
 				        	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
 				     
+
 				        }else{
-				        
-				        ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
-				        Boolean bflag = set2.getFlag(DefaultFlag.BUYABLE);
-				        Double pflag = set2.getFlag(DefaultFlag.PRICE);
-				        
-					if (bflag == null){
-						bflag = false;
-					}
-					
-					if (pflag == null){
+				        	
+					        ProtectedRegion set2 = regionManager.getRegionExact(args[0]);
+					        Boolean bflag = set2.getFlag(DefaultFlag.BUYABLE);
+					        Double pflag = set2.getFlag(DefaultFlag.PRICE);
+					        
+						if (bflag == null){
+							bflag = false;
+						}
+						
+			        	
+						if (pflag == null){
+							if (this.getConfig().getBoolean("buyland.usepriceperblock") == true){
+								//BETA AREA
+	                                int size = set2.volume();
+						        	int ppb = this.getConfig().getInt("buyland.defaultpriceperblock");
+						        	pflag = (double)size * ppb;
+						        //BETA AREA
+							}else{
 						pflag = this.getConfig().getDouble("buyland.defaultprice");
-					}
-				
-				 String test = bflag.toString();
+							}
+						}
+					
+					 String test = bflag.toString();
+				        	
+			        	if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
+							double s = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") / 2;
+							double m = this.getRentConfig().getDouble("rent." + args[0] +".costpermin");
+							double h = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 60;
+							double d = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 1440;
+							
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "The is rentable.");
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "The cost of " + args[0] + " is: ");
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Second = " + s);
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Minute = " + m);
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Hour = " + h);
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Day = " + d);
+										        		
+			        	}else{
 
 				 if (test == "true"){
 					 Double aflag = 0.00;
@@ -805,7 +1695,7 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
 					    String convertedprice = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.price"));
 						
 					    player.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedprice, econ.format(r.balance)));
-				         
+					    
 				         String nm = player.getName();
 				         int numofland = this.getCustomConfig().getInt(nm);
 				         int maxofland = this.getConfig().getInt("buyland.maxamountofland");
@@ -813,15 +1703,17 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
 				         String convertedpricemax1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.max1"));
 				         String convertedpricemax2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.max2"));
 		
-								
-				         
 				         player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedpricemax1 + numofland + convertedpricemax2 + maxofland + ".");
 				         
 				 }else{
-						String convertednotforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.downown"));
+				     String convertednotforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.dontown"));
 						
 					 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertednotforsale);
+				
 				 }
+				 
+				        
+				        }
 				        }
 				 
 					}else{
@@ -838,5 +1730,3 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
 
 }
 }
-
-
