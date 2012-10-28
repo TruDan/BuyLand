@@ -1,6 +1,9 @@
 name: BuyLand
-version: 0.5.B
+version: 0.5
 main: me.buyland.buyland.main
+description: Buy, Sell and Rent worldGuard Regions
+authors: [chriztopia]
+website: http://chriztopia.com
 depend: [WorldGuard]
 softdepend: [Vault]
 commands:

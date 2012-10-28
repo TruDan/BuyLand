@@ -180,11 +180,18 @@ public void saveRentConfig() {
 @Override
 public void onEnable() {
 	
+	
+	try {
+	    Metrics metrics = new Metrics(this);
+	    metrics.start();
+	} catch (IOException e) {
+	    // Failed to submit the stats :-(
+	}
+	
 	this.getServer().getPluginManager().registerEvents(new ServerChatPlayerListener(this), this);
 
 	PluginDescriptionFile pdffile = this.getDescription();
 	this.logger.info(pdffile.getName() + " version " + pdffile.getVersion() + " is enabled!");
-	
 	
 	getlanguageConfig().options().header("BuyLand Language File.");
 	
@@ -232,7 +239,6 @@ public void onEnable() {
 	getRentConfig().addDefault("rent.placeholder.rentable", true);
 	getRentConfig().addDefault("rent.placeholder.world", "world");
 	getRentConfig().addDefault("rent.placeholder.costpermin", 1.0);
-	
 
 	getRentConfig().options().copyDefaults(true);
 	this.saveRentConfig();
@@ -262,6 +268,37 @@ public void onEnable() {
 
 ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
 		    for (String regionName : yaml.getKeys(false)) {
+		    	
+
+		    	if (yaml.contains("rent.placeholder.time")){
+		    		
+		    	}else{
+		  		  //Protection May Cause Lag
+			    	getRentConfig().options().header("Rent File");
+			    	getRentConfig().addDefault("rent.placeholder.time", 0);
+			    	getRentConfig().addDefault("rent.placeholder.rentable", true);
+			    	getRentConfig().addDefault("rent.placeholder.world", "world");
+			    	getRentConfig().addDefault("rent.placeholder.costpermin", 1.0);
+			    	getRentConfig().options().copyDefaults(true);
+			    	saveRentConfig();
+			  //Protection
+		    	}
+		    	
+		    	if (yaml.contains(regionName + ".time")){
+		    		
+		    	}else{
+		    		
+			  	//Protection May Cause Lag
+				    	getRentConfig().addDefault("rent."+ regionName  + ".time", 0);
+				    	getRentConfig().addDefault("rent."+ regionName  + ".rentable", true);
+				    	getRentConfig().addDefault("rent."+ regionName  + ".world", "world");
+				    	getRentConfig().addDefault("rent."+ regionName  + ".costpermin", 1.0);
+				    	getRentConfig().options().copyDefaults(true);
+				    	saveRentConfig();
+				  //Protection
+		    		
+		    	}
+		    	
 		          
 		        if (yaml.getBoolean(regionName + ".rentable") == false && System.currentTimeMillis() > yaml.getLong(regionName + ".time")) {
 		       
@@ -304,7 +341,7 @@ ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
 
 
 		            }
-		        }, 20L, 600L);
+		        }, 20L, 1200L);
 	
 	
 			
@@ -569,6 +606,7 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 							 reloadCustomConfig();
 							 reloadlanguageConfig();
 							 reloadRentConfig();
+							 
 								String convertedgeneral2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.reload"));
 							 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral2);
 						   }else{
@@ -1065,6 +1103,7 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 
 	this.saveRentConfig();
 	this.reloadRentConfig();
+	
 
 	} else {
 	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1108,7 +1147,15 @@ set2.setOwners(dd);
 String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
 
 set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+
 set2.setFlag(DefaultFlag.BUYABLE, false);
+
+try
+{
+	regionManager.save();
+}
+ catch (Exception exp)
+{ }
 
 //Start Schematics
 World world2 = player.getWorld();
@@ -1174,6 +1221,14 @@ String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConf
 set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
 set2.setFlag(DefaultFlag.BUYABLE, false);
 
+
+try
+{
+	regionManager.save();
+}
+ catch (Exception exp)
+{ }
+
 //Start Schematics
 World world3 = player.getWorld();
 int x7 = set2.getMinimumPoint().getBlockX();
@@ -1203,6 +1258,7 @@ String name = args[0];
 //Set as not for rent.
 this.saveRentConfig();
 this.reloadRentConfig();
+
 
 	} else {
 	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1237,6 +1293,13 @@ String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConf
 
 set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
 set2.setFlag(DefaultFlag.BUYABLE, false);
+
+try
+{
+	regionManager.save();
+}
+ catch (Exception exp)
+{ }
 
 //Start Schematics
 World world4 = player.getWorld();
@@ -1299,6 +1362,13 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 
 	set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
 	set2.setFlag(DefaultFlag.BUYABLE, false);
+	
+	try
+	{
+		regionManager.save();
+	}
+	 catch (Exception exp)
+	{ }
 
 	//Start Schematics
 	World world5 = player.getWorld();
@@ -1331,6 +1401,7 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 	this.reloadRentConfig();
 	
 	
+	
 	} else {
 	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
 	sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
@@ -1342,12 +1413,7 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 		
 	}
         
-	    try
-	    {
-	    	regionManager.save();
-	    }
-	     catch (Exception exp)
-	    { }
+
         
 		}
 				}
@@ -1540,7 +1606,6 @@ if (numofland +1 > maxofland){
     	 
     	 String convertedb = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.bought"));
     	    		
-    	 
          sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedb, econ.format(r.amount), econ.format(r.balance)));
          String p1 = player.getName();
     	 set2.setFlag(DefaultFlag.BUYABLE, false);
@@ -1550,7 +1615,7 @@ if (numofland +1 > maxofland){
     		
     	 
     	 set2.setFlag(DefaultFlag.GREET_MESSAGE, convertedw1 + p1 + convertedw2);
-    	 
+ 	   
     	 int finalland = numofland + 1;
     	 
     	 this.getCustomConfig().set(nm, finalland);
@@ -1599,10 +1664,7 @@ if (numofland +1 > maxofland){
 	    {
 	    	regionManager.save();
 	    }
-
 	     catch (Exception exp)
-
-
 	    { }
 	 
 	    
@@ -1675,7 +1737,7 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.*")){
 							double h = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 60;
 							double d = this.getRentConfig().getDouble("rent." + args[0] +".costpermin") * 1440;
 							
-							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "The is rentable.");
+							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "This Region is rentable.");
 							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "The cost of " + args[0] + " is: ");
 							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Second = " + s);
 							player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "1 Minute = " + m);
