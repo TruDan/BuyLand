@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
@@ -24,10 +25,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+
 import org.bukkit.plugin.RegisteredServiceProvider;
 
 import org.bukkit.plugin.java.JavaPlugin;
-
 
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.CuboidClipboard;
@@ -48,6 +49,7 @@ import com.sk89q.worldedit.schematic.SchematicFormat;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.DefaultFlag;
+import com.sk89q.worldguard.protection.flags.StateFlag.State;
 
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
@@ -58,9 +60,11 @@ public class main extends JavaPlugin {
 	public static main plugin;
 	public final Logger logger = Logger.getLogger("Minecraft");
 	public ServerChatPlayerListener playerListener = new ServerChatPlayerListener(this);
+
 	
 @Override
 public void onDisable() {
+	saveRentConfig();
 	PluginDescriptionFile pdffile = this.getDescription();
 	this.logger.info(pdffile.getName() + " is now disabled.");
 }
@@ -107,6 +111,8 @@ public void saveCustomConfig() {
 
 private FileConfiguration languageConfig = null;
 private File languageConfigFile = null;
+
+
 
 public void reloadlanguageConfig() {
     if (languageConfigFile == null) {
@@ -176,10 +182,9 @@ public void saveRentConfig() {
     }
 }
 
-
 @Override
 public void onEnable() {
-	
+
 	
 	try {
 	    Metrics metrics = new Metrics(this);
@@ -187,9 +192,11 @@ public void onEnable() {
 	} catch (IOException e) {
 	    // Failed to submit the stats :-(
 	}
-	
 	this.getServer().getPluginManager().registerEvents(new ServerChatPlayerListener(this), this);
 
+
+	
+	
 	PluginDescriptionFile pdffile = this.getDescription();
 	this.logger.info(pdffile.getName() + " version " + pdffile.getVersion() + " is enabled!");
 	
@@ -203,7 +210,6 @@ public void onEnable() {
 	
 	getlanguageConfig().addDefault("buyland.admin.forsale", "This Region has been placed back for sale.");
 	
-	
 	getlanguageConfig().addDefault("buyland.rent.forrent", "This land is for rent!");
 	getlanguageConfig().addDefault("buyland.rent.noperm", "You dont have permission to do that!");
 	getlanguageConfig().addDefault("buyland.rent.tenant", "This land currently has a tenant - Time left: ");
@@ -211,7 +217,6 @@ public void onEnable() {
 	getlanguageConfig().addDefault("buyland.rent.notbe", "This land can not be rented.");
 	getlanguageConfig().addDefault("buyland.rent.cantafford", "%s to buy the land.");
 	getlanguageConfig().addDefault("buyland.rent.error1", "Sorry Rentable land can not be bought nor sold.");
-	
 
 	getlanguageConfig().addDefault("buyland.sell.forsale", "This land is for sale.");
 	getlanguageConfig().addDefault("buyland.sell.back1", "You have sold back the land for ");
@@ -249,7 +254,7 @@ public void onEnable() {
 	this.saveCustomConfig();
 		
 	final FileConfiguration config = this.getConfig();
-	config.options().header("BuyLand... Besure to make prices have .00 or it may break.");
+	config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
 	config.addDefault("buyland.defaultprice", 100.00);
 	config.addDefault("buyland.percentsellback", 1.00);
 	config.addDefault("buyland.maxamountofland", 1);
@@ -257,6 +262,13 @@ public void onEnable() {
 	config.addDefault("buyland.landpriority", 1);
 	config.addDefault("buyland.usepriceperblock", false);
 	config.addDefault("buyland.defaultpriceperblock", 1.00);
+	config.addDefault("buyland.rentbroadcastmsg", true);
+	config.addDefault("buyland.landgreeting", true);
+	config.addDefault("buyland.landgreetingerasemsg", false);
+	config.addDefault("buyland.breaksignonbuy", false);
+	config.addDefault("buyland.denyentrytoland", false);
+	
+	
 	config.options().copyDefaults(true);
 	saveConfig();
 	
@@ -269,20 +281,6 @@ public void onEnable() {
 ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
 		    for (String regionName : yaml.getKeys(false)) {
 		    	
-
-		    	if (yaml.contains("rent.placeholder.time")){
-		    		
-		    	}else{
-		  		  //Protection May Cause Lag
-			    	getRentConfig().options().header("Rent File");
-			    	getRentConfig().addDefault("rent.placeholder.time", 0);
-			    	getRentConfig().addDefault("rent.placeholder.rentable", true);
-			    	getRentConfig().addDefault("rent.placeholder.world", "world");
-			    	getRentConfig().addDefault("rent.placeholder.costpermin", 1.0);
-			    	getRentConfig().options().copyDefaults(true);
-			    	saveRentConfig();
-			  //Protection
-		    	}
 		    	
 		    	if (yaml.contains(regionName + ".time")){
 		    		
@@ -294,15 +292,21 @@ ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
 				    	getRentConfig().addDefault("rent."+ regionName  + ".world", "world");
 				    	getRentConfig().addDefault("rent."+ regionName  + ".costpermin", 1.0);
 				    	getRentConfig().options().copyDefaults(true);
+				    	//getServer().getLogger().info("BuyLand_Debug - Save Rent Config Start 12");
 				    	saveRentConfig();
-				  //Protection
+				    	//getServer().getLogger().info("BuyLand_Debug - Save Rent Config END 12");
 		    		
 		    	}
 		    	
 		          
 		        if (yaml.getBoolean(regionName + ".rentable") == false && System.currentTimeMillis() > yaml.getLong(regionName + ".time")) {
 		       
-		        	getServer().broadcastMessage(ChatColor.RED + "BuyLand: " + ChatColor.YELLOW + regionName + " is now rentable!");
+		        	
+		        	if (config.getBoolean("buyland.rentbroadcastmsg") == true){
+			        	getServer().broadcastMessage(ChatColor.RED + "BuyLand: " + ChatColor.YELLOW + regionName + " is now rentable!");
+		        	}
+
+		        	
 		        	getRentConfig().set("rent." + regionName + ".rentable", true);
 		        	String world1 = yaml.getString(regionName + ".world");
 		        	
@@ -317,7 +321,19 @@ ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
 		    		
 		    		File file = new File(getDataFolder() + File.separator + "data" + File.separator + regionName + ".schematic");
 		    		ResetMap(file, v1, world);
-		    		set2.setFlag(DefaultFlag.GREET_MESSAGE, "This Land is for rent!");
+		   	
+if (config.getBoolean("buyland.landgreeting") == true){
+		set2.setFlag(DefaultFlag.GREET_MESSAGE, "This land is for rent!");
+}else if (config.getBoolean("buyland.landgreetingerasemsg") == true){
+	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+}
+
+if (config.getBoolean("buyland.denyentrytoland") == true){
+    set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+	}else{
+		set2.setFlag(DefaultFlag.ENTRY, null);
+	}
+
 		        	DefaultDomain du = set2.getOwners();
 		        	
 		        	String pn = du.toString();
@@ -331,12 +347,15 @@ ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
 		    	    }
 		    	     catch (Exception exp)
 		    	    { }
+			       // getServer().getLogger().info("BuyLand_Debug - Save Rent Config Start 13");
+		    		 saveRentConfig();
+		    		// getServer().getLogger().info("BuyLand_Debug - Save Rent Config END 13");
+		    		// getServer().getLogger().info("BuyLand_Debug - Reload Rent Config Start 13");
+		    		 reloadRentConfig();
+		    		// getServer().getLogger().info("BuyLand_Debug - Reload Rent Config END 13");
 		    		
 		            	    }
-	        	saveRentConfig();
-	        	reloadRentConfig();
-	        	
-	        	
+
 		            	} 
 
 
@@ -351,6 +370,9 @@ ConfigurationSection yaml = getRentConfig().getConfigurationSection("rent");
         return;
     }
     setupChat();	
+    
+  
+
     
 //Check for data folder then create it.   
     File f = new File(getDataFolder() + File.separator + "data" + File.separator + "placeholder.txt");
@@ -385,7 +407,6 @@ public static void ResetMap(File file, Vector v, World worldf) {
        // Logger.warning(("File does not exist."));
     }
 }
-
 
 
 //This is for Vault.
@@ -442,7 +463,21 @@ if (abc == "buy"){
     pr.setFlag(DefaultFlag.BUYABLE, true);
     String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.forsale"));
 	
+    
+    if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+    	
     pr.setFlag(DefaultFlag.GREET_MESSAGE, convertedforsale);
+    }else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+    	pr.setFlag(DefaultFlag.GREET_MESSAGE, null);
+    }
+    
+	if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+        pr.setFlag(DefaultFlag.ENTRY, State.DENY);
+		}else{
+			pr.setFlag(DefaultFlag.ENTRY, null);
+		}
+    
+    
     pr.setPriority(this.getConfig().getInt("buyland.landpriority"));
     
     DefaultDomain dd = new DefaultDomain();
@@ -475,16 +510,35 @@ rm.addRegion(pr);
 
 //pr.setFlag(DefaultFlag.BUYABLE, true);
 String forrent = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.forrent"));
+if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+	
 
 pr.setFlag(DefaultFlag.GREET_MESSAGE, forrent);
+}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+	pr.setFlag(DefaultFlag.GREET_MESSAGE, null);
+}
+
+if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+    pr.setFlag(DefaultFlag.ENTRY, State.DENY);
+	}else{
+		pr.setFlag(DefaultFlag.ENTRY, null);
+	}
+
+
 pr.setPriority(this.getConfig().getInt("buyland.landpriority"));
 
 this.getRentConfig().set("rent." + name + ".time", 0);
 this.getRentConfig().set("rent." + name + ".rentable", true);
 this.getRentConfig().set("rent." + name + ".world", world);
 this.getRentConfig().set("rent." + name + ".costpermin", 1.0);
-this.saveRentConfig();
-this.reloadRentConfig();
+
+//this.logger.info("BuyLand_Debug - Save Rent Config Start 14");
+saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 14");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 14");
+
+reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 14");
 
 DefaultDomain dd = new DefaultDomain();
 // add the player to the region      
@@ -506,7 +560,7 @@ try
 }
 
 @SuppressWarnings("deprecation")
-private void saveSchematic(Location loc1, Location loc2, String schematic, Player player) throws EmptyClipboardException, IOException, DataException {
+public void saveSchematic(Location loc1, Location loc2, String schematic, Player player) throws EmptyClipboardException, IOException, DataException {
     WorldEditPlugin wep = (WorldEditPlugin) this.getServer().getPluginManager().getPlugin("WorldEdit");
     WorldEdit we = wep.getWorldEdit();
     BukkitPlayer localPlayer = wep.wrapPlayer(player);
@@ -702,6 +756,9 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 		//DefaultDomain owner = set2.getOwners();
 	     Double pflag1 = Double.valueOf(args[2]);
 	     set2.setFlag(DefaultFlag.PRICE, pflag1);
+	     
+	     
+	     
 		    try
 		    {
 		    	regionManager1.save();
@@ -789,8 +846,20 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 				 set2.setOwners(dd);
 				 
 				 set2.setFlag(DefaultFlag.BUYABLE, true);
+				 
+			 		if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+			 	        set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+			 			}else{
+			 				set2.setFlag(DefaultFlag.ENTRY, null);
+			 			}
+				 
+				 if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+						
 				 set2.setFlag(DefaultFlag.GREET_MESSAGE, convertedforsale);
-			
+				 }else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+				    	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+				    }
+				 
 				String nm = owner2;
 				
 				int numofland = this.getCustomConfig().getInt(nm);
@@ -931,15 +1000,33 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 							        	
 										String forrent = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.forrent"));
 
+										if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+											
+									 		if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+									 	        set3.setFlag(DefaultFlag.ENTRY, State.DENY);
+									 			}else{
+									 				set3.setFlag(DefaultFlag.ENTRY, null);
+									 			}
+											
 							        	set3.setFlag(DefaultFlag.GREET_MESSAGE, forrent);
+										}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+									    	set3.setFlag(DefaultFlag.GREET_MESSAGE, null);
+									    }
+							        	
 							        	String pn = du.toString();
 							    		
 							    	   	  DefaultDomain dd = new DefaultDomain();
 							    		    dd.removePlayer(pn);
 							    		 set3.setOwners(dd);
+							    		 
+					//this.logger.info("BuyLand_Debug - Save Rent Config Start 1");
 							    		 saveRentConfig();
+					//this.logger.info("BuyLand_Debug - Save Rent Config End 1");
+					//this.logger.info("BuyLand_Debug - Reload Rent Config Start 1");
+							    		
 							    		 reloadRentConfig();
-					
+					// this.logger.info("BuyLand_Debug - Reload Rent Config End 1");
+					 
 							    		    try
 							    		    {
 							    		    	regionManager.save();
@@ -983,15 +1070,33 @@ if (this.getRentConfig().getBoolean("rent." + args[0] + ".rentable") == false &&
 				        
 							String forrent = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.forrent"));
 
+							if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+						
+						 		if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+						 	        set3.setFlag(DefaultFlag.ENTRY, State.DENY);
+						 			}else{
+						 				set3.setFlag(DefaultFlag.ENTRY, null);
+						 			}
+								
 				        	set3.setFlag(DefaultFlag.GREET_MESSAGE, forrent);
+							}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+						    	set3.setFlag(DefaultFlag.GREET_MESSAGE, null);
+						    }
+				        	
 				        	String pn = du.toString();
 				    		
 				    	   	  DefaultDomain dd = new DefaultDomain();
 				    		    dd.removePlayer(pn);
 				    		 set3.setOwners(dd);
 				    		 
-				    		 saveRentConfig();
-				    		 reloadRentConfig();
+								//this.logger.info("BuyLand_Debug - Save Rent Config Start 2");
+					    		 saveRentConfig();
+			//this.logger.info("BuyLand_Debug - Save Rent Config End 2");
+			//this.logger.info("BuyLand_Debug - Reload Rent Config Start 2");
+					    		
+					    		 reloadRentConfig();
+			// this.logger.info("BuyLand_Debug - Reload Rent Config End 2");
+			 
 				    		 
 				    		    try
 				    		    {
@@ -1031,8 +1136,15 @@ if (args[2].equalsIgnoreCase("s") || args[2].equalsIgnoreCase("sec") || args[2].
 long time = timea * 1000L;
 long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
 this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
-this.saveRentConfig();
-this.reloadRentConfig();
+
+//this.logger.info("BuyLand_Debug - Save Rent Config Start 3");
+saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 3");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 3");
+
+reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 3");
+
 
 } else {
 String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1054,8 +1166,16 @@ sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE +
 	long time = timea * 60000L;
 long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
 this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
-this.saveRentConfig();
-this.reloadRentConfig();
+
+
+//this.logger.info("BuyLand_Debug - Save Rent Config Start 4");
+saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 4");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 4");
+
+reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 4");
+
 
 } else {
 String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1078,8 +1198,17 @@ sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE +
 long time = timea * 3600000L;
 long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
 this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
-this.saveRentConfig();
-this.reloadRentConfig();
+
+
+//this.logger.info("BuyLand_Debug - Save Rent Config Start 5");
+saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 5");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 5");
+
+reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 5");
+
+
 
 } else {
 String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1101,8 +1230,14 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 	long timepull = this.getRentConfig().getLong("rent." + args[0] +".time");
 	this.getRentConfig().set("rent." + args[0] +".time", timepull + time);
 
-	this.saveRentConfig();
-	this.reloadRentConfig();
+	//this.logger.info("BuyLand_Debug - Save Rent Config Start 6");
+	 saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 6");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 6");
+	
+	 reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 6");
+
 	
 
 	} else {
@@ -1146,7 +1281,18 @@ set2.setOwners(dd);
 
 String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
 
+if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+	
 set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+	
+		if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+ 	        set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+ 			}else{
+ 				set2.setFlag(DefaultFlag.ENTRY, null);
+ 			}
+}
 
 set2.setFlag(DefaultFlag.BUYABLE, false);
 
@@ -1183,9 +1329,14 @@ String name = args[0];
 	
 //END schematics
 
-//Set as not for rent.
-this.saveRentConfig();
-this.reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config Start 7");
+saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 7");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 7");
+
+reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 7");
+
 
 } else {
 String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1218,7 +1369,19 @@ set2.setOwners(dd);
 
 String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
 
+if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+	
 set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+}
+
+if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+    set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+	}else{
+		set2.setFlag(DefaultFlag.ENTRY, null);
+	}
+
 set2.setFlag(DefaultFlag.BUYABLE, false);
 
 
@@ -1255,9 +1418,14 @@ String name = args[0];
 	
 //END schematics
 
-//Set as not for rent.
-this.saveRentConfig();
-this.reloadRentConfig();
+		//this.logger.info("BuyLand_Debug - Save Rent Config Start 8");
+		 saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 8");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 8");
+		
+		 reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 8");
+
 
 
 	} else {
@@ -1291,7 +1459,19 @@ set2.setOwners(dd);
 
 String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
 
+if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+	
 set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+}
+
+if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+    set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+	}else{
+		set2.setFlag(DefaultFlag.ENTRY, null);
+	}
+
 set2.setFlag(DefaultFlag.BUYABLE, false);
 
 try
@@ -1327,9 +1507,14 @@ String name = args[0];
 	
 //END schematics
 
-//Set as not for rent.
-this.saveRentConfig();
-this.reloadRentConfig();
+		//this.logger.info("BuyLand_Debug - Save Rent Config Start 9");
+		 saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 9");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 9");
+		
+		 reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 9");
+
 
 	} else {
 	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1360,7 +1545,19 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 	
 	String rentby = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.rentby"));
 
+	if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+		
 	set2.setFlag(DefaultFlag.GREET_MESSAGE, rentby + p1);
+	}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+    	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+    }
+	
+	if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+        set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+		}else{
+			set2.setFlag(DefaultFlag.ENTRY, null);
+		}
+	
 	set2.setFlag(DefaultFlag.BUYABLE, false);
 	
 	try
@@ -1396,11 +1593,16 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 		
 	//END schematics
 	
-	//Set as not for rent.
-	this.saveRentConfig();
-	this.reloadRentConfig();
-	
-	
+
+			//this.logger.info("BuyLand_Debug - Save Rent Config Start 10");
+   		 saveRentConfig();
+//this.logger.info("BuyLand_Debug - Save Rent Config End 10");
+//this.logger.info("BuyLand_Debug - Reload Rent Config Start 10");
+   		
+   		 reloadRentConfig();
+//this.logger.info("BuyLand_Debug - Reload Rent Config End 10");
+
+			
 	
 	} else {
 	String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.cantafford"));
@@ -1418,7 +1620,7 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 		}
 				}
 
-				//bottom
+				//bottom rentland command
 				}
 			}
         	
@@ -1436,12 +1638,10 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 		}
 	}
 	
-
 	
 //SELLLAND COMMAND	
 	if (cmd.getName().equalsIgnoreCase("sellland")){ 
 if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.*")){
-	
 	
 	if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
 		
@@ -1483,16 +1683,28 @@ DefaultDomain owner = set2.getOwners();
 	String convertedl1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.back1"));
 	String convertedl2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.back2"));
 	
-		EconomyResponse r = econ.depositPlayer(player.getName(), finalp);
-         player.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedl1 + finalp + convertedl2, econ.format(r.balance)));
+EconomyResponse r = econ.depositPlayer(player.getName(), finalp);
+player.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedl1 + finalp + convertedl2, econ.format(r.balance)));
 
-		String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.forsale"));
+String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.sell.forsale"));
 		
    	  DefaultDomain dd = new DefaultDomain();
 	    dd.removePlayer(pn);
 	 set2.setOwners(dd);
 	 set2.setFlag(DefaultFlag.BUYABLE, true);
+	 if (this.getConfig().getBoolean("buyland.landgreeting") == true){
+			
 	 set2.setFlag(DefaultFlag.GREET_MESSAGE, convertedforsale);
+	}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+    	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+    }
+	 
+		if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+	        set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+			}else{
+				set2.setFlag(DefaultFlag.ENTRY, null);
+			}
+	 
 	 set2.setPriority(this.getConfig().getInt("buyland.landpriority"));
 	 
 		String nm = player.getName();
@@ -1541,17 +1753,12 @@ DefaultDomain owner = set2.getOwners();
 	if (cmd.getName().equalsIgnoreCase("buyland")){
 	if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.*")){
 		
-		
 		if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
-			
         	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.error1"));
-			
         	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
-
 		
 		}else{
 		
-
         World world1 = player.getWorld();
         RegionManager regionManager = this.getWorldGuard().getRegionManager(world1);
         if(regionManager.getRegionExact(args[0]) == null){
@@ -1568,7 +1775,7 @@ DefaultDomain owner = set2.getOwners();
         
         Boolean bflag = set2.getFlag(DefaultFlag.BUYABLE);
         Double pflag = set2.getFlag(DefaultFlag.PRICE);
-        
+          
 	if (bflag == null){
 		bflag = false;
 	}
@@ -1609,12 +1816,21 @@ if (numofland +1 > maxofland){
          sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedb, econ.format(r.amount), econ.format(r.balance)));
          String p1 = player.getName();
     	 set2.setFlag(DefaultFlag.BUYABLE, false);
+    	 
+ 		if (this.getConfig().getBoolean("buyland.denyentrytoland") == true){
+ 	        set2.setFlag(DefaultFlag.ENTRY, State.DENY);
+ 			}else{
+ 				set2.setFlag(DefaultFlag.ENTRY, null);
+ 			}
 
     		String convertedw1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.welcome1"));
     		String convertedw2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.welcome2"));
     		
-    	 
+    		if (this.getConfig().getBoolean("buyland.landgreeting") == true){
     	 set2.setFlag(DefaultFlag.GREET_MESSAGE, convertedw1 + p1 + convertedw2);
+    		}else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
+    	    	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
+    	    }
  	   
     	 int finalland = numofland + 1;
     	 
