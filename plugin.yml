@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.5
+version: 0.5.3
 main: me.buyland.buyland.main
 description: Buy, Sell and Rent worldGuard Regions
 authors: [chriztopia]
@@ -31,19 +31,32 @@ commands:
 permissions:
     buyland.buy:
         description: Buys a Region.
-        default: false
+        default: op
     buyland.sell:
         description: Sells a Region.
-        default: false
+        default: op
     buyland.rent:
         description: Rents a Region.
-        default: false
+        default: op
     buyland.price:
         description: Prices a Region.
-        default: false
+        default: op
     buyland.reload:
         description: Reload the Configs.
         default: op
     buyland.admin:
         description: Admin Commands for BuyLand.
         default: op
+    buyland*:
+        description: All Commands.
+        default: op
+    buyland.signuse:
+        description: Allowed use of BuyLand command signs.
+        default: op
+    buyland.signbreak:
+        description: Allowed to Break Buyland command signs.
+        default: op
+    buyland.signcreate:
+        description: Allowed to Create Buyland command signs.
+        default: op
+        
