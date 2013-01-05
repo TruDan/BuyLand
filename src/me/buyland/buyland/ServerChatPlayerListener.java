@@ -56,6 +56,7 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	}
 	
 	
+	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onSignChange(SignChangeEvent event) {
 		
@@ -66,8 +67,6 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
         loc.setY(loc.getY() - 1);
         loc.setX(loc.getX() - 1);
         
-        
-      
         Sign s = (Sign) event.getBlock().getState();
         
        if(event.getLine(0).contains("[BuyLand]") || event.getLine(0).equalsIgnoreCase("[BuyLand]")){
@@ -106,6 +105,13 @@ event.setLine(2, "Invalid Region");
 				
 				String price = pflag.toString();
 				event.setLine(3, price);
+				
+	        	Location signloc = s.getLocation();
+	            String location = (signloc.getWorld().getName() + ":" + signloc.getX() + ":" + signloc.getY() + ":" + signloc.getZ());
+	            String signname = event.getLine(2);
+	            plugin.getsignConfig().set("sign." + signname, location);
+	            plugin.savesignConfig();
+	            plugin.reloadsignConfig();
 	        }
         	
            }else if (event.getLine(1).equalsIgnoreCase("For Rent")){
@@ -119,12 +125,13 @@ event.setLine(2, "Invalid Region");
 	        }else{
         	
 	        }
-	        }else{
+	        }else if (event.getLine(1).equalsIgnoreCase("TEST")){
+
+	            
+	        }else{ 	
         event.setLine(1, "Error");
            }
-          // event.setLine(2, "---");
-           
-
+          
                      
            s.update();
     	   
@@ -296,6 +303,16 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 							p.sendMessage(ChatColor.RED + "BuyLand: Insignificant funds to buy.");
 						}else{
 							
+							String nm = p.getName();
+							int numofland = plugin.getCustomConfig().getInt(nm);
+							int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
+							
+
+						if (numofland +1 > maxofland){
+							String convertedmax = ChatColor.translateAlternateColorCodes('&', plugin.getlanguageConfig().getString("buyland.buy.max"));
+							
+							p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedmax);
+						}else{
 
 							
 				    	 if (plugin.getConfig().getBoolean("buyland.breaksignonbuy") == true){
@@ -309,6 +326,8 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 						        s.update();
 						        Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "buyland " + plotname);
 			   hashbuy.remove(plotname);
+			   
+						}
 			   
 
 						}
@@ -342,14 +361,24 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 			    	 if (plugin.getConfig().getBoolean("buyland.breaksignonbuy") == true){
 					    	s.getBlock().setType(Material.AIR);
 					    	 }
-					    	 
+						String nm = p.getName();
+						int numofland = plugin.getCustomConfig().getInt(nm);
+						int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
+						
+
+					if (numofland +1 > maxofland){
+						String convertedmax = ChatColor.translateAlternateColorCodes('&', plugin.getlanguageConfig().getString("buyland.buy.max"));
+						
+						p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedmax);
+					}else{
 					        s.setLine(0, "[BuyLand]");
 					        s.setLine(1, "Sale Back");
 					        s.setLine(2, plotname);
 					        s.setLine(3, p.getName());
 					        s.update();
 					        Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "buyland " + plotname);
-		 hashbuy.remove(plotname);	
+					}
+					        hashbuy.remove(plotname);	
 		 
 				  	  	}
 				  	  	}else{
