@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.5.5
+version: 0.5.8
 main: me.buyland.buyland.main
 description: Buy, Sell and Rent worldGuard Regions
 authors: [chriztopia]
@@ -64,4 +64,13 @@ permissions:
         default: op
     buyland.buy.removemember:
         description: RemoveMember from region.
-        default: op   
+        default: op
+    buyland.tp:
+        description: Teleport to a regions sign.
+        default: op
+    buyland.list:
+        description: List all owned regions.
+        default: op 
+    buyland.admin.list:
+        description: List all owned regions for a player.
+        default: op 

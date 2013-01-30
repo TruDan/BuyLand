@@ -1,6 +1,5 @@
 package me.buyland.buyland;
 
-
 import java.util.HashMap;
 
 import me.buyland.buyland.main;
@@ -73,7 +72,7 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
        if(p.hasPermission("buyland.signcreate") || p.hasPermission("buyland.*")){
     	   
            event.setLine(0, "[BuyLand]"); 
-                 
+  //-----               
            if (event.getLine(1).equalsIgnoreCase("For Sale")){
         	event.setLine(1, "For Sale");
         	
@@ -83,21 +82,19 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	        if(regionManager.getRegionExact(plotname) == null){
 event.setLine(2, "Invalid Region");
 	        }else{
-
 				World world2 = p.getWorld();
 			    RegionManager regionManager1 = plugin.getWorldGuard().getRegionManager(world2);
 				ProtectedRegion set2 = regionManager1.getRegionExact(plotname);
 				
 		        Double pflag = set2.getFlag(DefaultFlag.PRICE);
-				
+		
 			if (pflag == null){
 				if (plugin.getConfig().getBoolean("buyland.usepriceperblock") == true){
-					//BETA AREA
+					
 			        	int size =set2.volume();
-			        	//player.sendMessage("Area of blocks: " + size);
 			        	int ppb = plugin.getConfig().getInt("buyland.defaultpriceperblock");
 			        	pflag = (double)size * ppb;
-			        //BETA AREA
+			        
 				}else{
 			pflag = plugin.getConfig().getDouble("buyland.defaultprice");
 				}

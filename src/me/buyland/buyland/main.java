@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,10 +15,10 @@ import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 
-
-//import org.bukkit.block.Sign;
+import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -33,6 +34,10 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+
+import com.griefcraft.lwc.LWC;
+import com.griefcraft.lwc.LWCPlugin;
+import com.griefcraft.model.Protection;
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.CuboidClipboard;
 import com.sk89q.worldedit.EditSession;
@@ -49,6 +54,7 @@ import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldedit.data.DataException;
 import com.sk89q.worldedit.schematic.SchematicFormat;
 
+import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.databases.ProtectionDatabaseException;
@@ -76,6 +82,7 @@ WorldGuardPlugin worldGuard;
 
 public static Economy econ = null;
 public static Chat chat = null;
+private LWC LWC1;
 //---------------
 
 private FileConfiguration signConfig = null;
@@ -152,8 +159,6 @@ public void saveCustomConfig() {
 private FileConfiguration languageConfig = null;
 private File languageConfigFile = null;
 
-
-
 public void reloadlanguageConfig() {
     if (languageConfigFile == null) {
     	languageConfigFile = new File(getDataFolder(), "language.yml");
@@ -185,8 +190,45 @@ public void savelanguageConfig() {
         this.getLogger().log(Level.SEVERE, "Could not save config to " + languageConfigFile, ex);
     }
 }
+//
 
 
+private FileConfiguration userConfig = null;
+private File userConfigFile = null;
+
+public void reloaduserConfig() {
+    if (userConfigFile == null) {
+    	userConfigFile = new File(getDataFolder(), "user.yml");
+    }
+    userConfig = YamlConfiguration.loadConfiguration(userConfigFile);
+ 
+    // Look for defaults in the jar
+    InputStream defConfigStream = this.getResource("user.yml");
+    if (defConfigStream != null) {
+        YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+        userConfig.setDefaults(defConfig);
+    }
+}
+
+public FileConfiguration getuserConfig() {
+    if (userConfig == null) {
+        this.reloaduserConfig();
+    }
+    return userConfig;
+}
+
+public void saveuserConfig() {
+    if (userConfig == null || userConfigFile == null) {
+    return;
+    }
+    try {
+        getuserConfig().save(userConfigFile);
+    } catch (IOException ex) {
+        this.getLogger().log(Level.SEVERE, "Could not save config to " + userConfigFile, ex);
+    }
+}
+
+//
 private FileConfiguration RentConfig = null;
 private File RentConfigFile = null;
 
@@ -300,6 +342,11 @@ public void onEnable() {
 	getCustomConfig().addDefault("user", 0);
 	getCustomConfig().options().copyDefaults(true);
 	this.saveCustomConfig();
+	
+	getuserConfig().options().header("BuyLand User DB File. Used for keeping track of what plots a user has.");
+	getuserConfig().addDefault("user.region.regionname", "regionname");
+	getuserConfig().options().copyDefaults(true);
+	this.saveuserConfig();
 		
 	final FileConfiguration config = this.getConfig();
 	config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
@@ -315,6 +362,8 @@ public void onEnable() {
 	config.addDefault("buyland.landgreetingerasemsg", false);
 	config.addDefault("buyland.breaksignonbuy", false);
 	config.addDefault("buyland.denyentrytoland", false);
+	config.addDefault("buyland.removelwcprotection", false);
+	//config.addDefault("buyland.recreatebrokensign", true);
 
 	config.options().copyDefaults(true);
 	saveConfig();
@@ -369,7 +418,64 @@ for (String regionName : yaml.getKeys(false)) {
 		
 		File file = new File(getDataFolder() + File.separator + "data" + File.separator + regionName + ".schematic");
 		ResetMap(file, v1, world);
-	
+//\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\		
+
+		
+		
+		//test101
+		//LWC
+		if (getConfig().getBoolean("buyland.removelwcprotection") == true){
+		   	
+		final Plugin plugin;
+		plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+		if(plugin != null && plugin instanceof LWCPlugin) {
+			LWC1 = ((LWCPlugin) plugin).getLWC();
+		}
+		
+		
+	  
+	  World world9 = Bukkit.getWorld(world1);
+	  RegionManager regionManager2 = getWorldGuard().getRegionManager(world9);
+	  if(regionManager2.getRegionExact(regionName) == null){
+	  //	this.getServer().getLogger().info("NULL");
+	  }else{
+
+	  	
+	  	ProtectedRegion set4 = regionManager2.getRegionExact(regionName);
+	  	int minx = set4.getMinimumPoint().getBlockX();
+	  	int miny = set4.getMinimumPoint().getBlockY();
+	  	int minz = set4.getMinimumPoint().getBlockZ();
+
+	  	int maxx = set4.getMaximumPoint().getBlockX();
+	  	int maxy = set4.getMaximumPoint().getBlockY();
+	  	int maxz = set4.getMaximumPoint().getBlockZ();
+
+	  	
+			for(int x11=minx; x11<maxx; x11++) {
+				for(int y11=miny; y11<maxy; y11++) {
+					for(int z11=minz; z11<maxz; z11++) {
+						
+		        		Protection protection = LWC1.findProtection(world9, x11, y11, z11);
+		        		if(protection != null) {
+		        			protection.remove();
+		        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+		        		}else{
+		        		
+		        		}
+						
+						
+					}
+				}
+			}
+
+	  }
+		}
+	//************************		
+		
+		
+		
+		
+//\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 if (config.getBoolean("buyland.landgreeting") == true){
 set2.setFlag(DefaultFlag.GREET_MESSAGE, "This land is for rent!");
 }else if (config.getBoolean("buyland.landgreetingerasemsg") == true){
@@ -527,11 +633,11 @@ if (abc == "buy"){
     
     pr.setPriority(this.getConfig().getInt("buyland.landpriority"));
     
-    DefaultDomain dd = new DefaultDomain();
+   // DefaultDomain dd = new DefaultDomain();
     // add the player to the region      
-    dd.addPlayer(p1);
+  //  dd.addPlayer(p1);
     // set the player as the owner
-    pr.setOwners(dd);
+  //  pr.setOwners(dd);
 
     logger.info("BuyLand: Added region: " + name);
     
@@ -587,11 +693,11 @@ saveRentConfig();
 reloadRentConfig();
 //this.logger.info("BuyLand_Debug - Reload Rent Config End 14");
 
-DefaultDomain dd = new DefaultDomain();
+//DefaultDomain dd = new DefaultDomain();
 // add the player to the region      
-dd.addPlayer(p1);
+//dd.addPlayer(p1);
 // set the player as the owner
-pr.setOwners(dd);
+//pr.setOwners(dd);
 
 logger.info("BuyLand: Added region: " + name);
 
@@ -692,7 +798,8 @@ return auxRet;
 //stringtoloc
 public Location stringToLoc(String string){
     String[] loc = string.split(":");
-    System.out.println(loc.toString());
+   // System.out.println(loc.toString());
+    loc.toString();
     World world = Bukkit.getWorld(loc[0]);
     Double x = Double.parseDouble(loc[1]);
     Double y = Double.parseDouble(loc[2]);
@@ -717,7 +824,7 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 							 reloadlanguageConfig();
 							 reloadRentConfig();
 							 
-								String convertedgeneral2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.reload"));
+							String convertedgeneral2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.reload"));
 							 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral2);
 						   }else{
 								String convertedgeneral = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.permission"));
@@ -728,7 +835,14 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 //General HELP
 							PluginDescriptionFile pdffile = this.getDescription();
 							
+							if (cmd.getName().equalsIgnoreCase("rentland")){ 
+							if (player.hasPermission("buyland.rent") || player.hasPermission("buyland.*")){
+								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] cost - Check cost of rentable land");  
+								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] 1 minute - Rent land");  
+								}
+							}
 							
+		if (cmd.getName().equalsIgnoreCase("buyland")){ 				
 		player.sendMessage(ChatColor.RED + "BuyLand: V" +  pdffile.getVersion() + ChatColor.GOLD + " is a product of chriztopia.com");
 		if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.*")){
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland [region_name] - Buy land");  
@@ -745,28 +859,62 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 		if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.*")){
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/sellland [region_name] - Sell land");  
 		}
-		if (player.hasPermission("buyland.rent") || player.hasPermission("buyland.*")){
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] cost - Check cost of rentable land");  
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] 1 minute - Rent land");  
+		if (player.hasPermission("buyland.tp") || player.hasPermission("buyland.*")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland tp [region_name] - Teleport you to region.");  
 		}
+		if (player.hasPermission("buyland.list") || player.hasPermission("buyland.*")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland list - Lists all owned regions.");  
+		}
+
+					   }
 		if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
+if (cmd.getName().equalsIgnoreCase("abl") || (cmd.getName().equalsIgnoreCase("adminbuyland"))){ 
 			player.sendMessage(" ");
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.YELLOW + "Admin Commands");
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl forsale [region_name] - Makes a premade region buyable");  
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl save [region_name] - Select with WorldEdit first");  
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl price [region_name] [cost] - Sets a price for buyable land");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl list [player] [region_name] - Lists Owned land of player.");  
 			
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl reset [region_name] - Resets buyable land");  
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland save [region_name] - Select with WorldEdit first");  
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] reset - Reset rentable land");  
-			
+		
+}
 		}
 					   }
 					   }
 		   if (args.length > 0){
 			   
 //AdminBuyLand ABL COMMAND	
-if (cmd.getName().equalsIgnoreCase("abl") || (cmd.getName().equalsIgnoreCase("adminbuyland"))){ 
+if (cmd.getName().equalsIgnoreCase("abl") || (cmd.getName().equalsIgnoreCase("adminbuyland"))){
+	
+	if (player.hasPermission("buyland.admin.list") || player.hasPermission("buyland.*") || player.hasPermission("buyland.admin")){	
+	//Begin list
+	
+if (args[0].equalsIgnoreCase("list")){
+		if(args.length < 2){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Usage: /buyland list [player]");
+	}else{ 
+World w1 = player.getWorld();
+		Map<String, ProtectedRegion> regionMap = WGBukkit.getRegionManager(w1).getRegions();
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + args[1] + " owns regions: ");
+		for(ProtectedRegion region : regionMap.values()) {	
+		if(region.isOwner(args[1])) {	
+	if(region.getFlag(DefaultFlag.BUYABLE) == null){
+	//	player.sendMessage("null" + region.getId());
+	}else{
+			if(region.getFlag(DefaultFlag.BUYABLE) == false){
+				player.sendMessage(" " + region.getId());
+					
+			}
+		}				
+		}
+		}	
+	}
+}
+	}
+
 if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 	if (args[0].equalsIgnoreCase("save")){
 		if (args.length == 1 ){
@@ -790,6 +938,75 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Region Added!");
 //EndSaveArg
 	}
+	}
+	
+	if (args[0].equalsIgnoreCase("test")){
+	player.sendMessage(" " +	player.getLastPlayed());
+	}
+		
+	
+	
+	if (args[0].equalsIgnoreCase("lwcremove")){
+//lwcremove command
+		//test101
+   		//LWC
+   		if (this.getConfig().getBoolean("buyland.removelwcprotection") == true){
+   		   	
+   		final Plugin plugin;
+   		plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+   		if(plugin != null && plugin instanceof LWCPlugin) {
+   			LWC1 = ((LWCPlugin) plugin).getLWC();
+   		}
+   		
+   		
+   	  World world9 = player.getWorld();
+   	  RegionManager regionManager2 = this.getWorldGuard().getRegionManager(world9);
+   	  if(regionManager2.getRegionExact(args[1]) == null){
+   	  //	this.getServer().getLogger().info("NULL");
+   	  }else{
+
+   	  	
+   	  	ProtectedRegion set4 = regionManager2.getRegionExact(args[1]);
+   	  	int minx = set4.getMinimumPoint().getBlockX();
+   	  	int miny = set4.getMinimumPoint().getBlockY();
+   	  	int minz = set4.getMinimumPoint().getBlockZ();
+
+   	  	int maxx = set4.getMaximumPoint().getBlockX();
+   	  	int maxy = set4.getMaximumPoint().getBlockY();
+   	  	int maxz = set4.getMaximumPoint().getBlockZ();
+
+   	  	
+   			for(int x11=minx; x11<maxx; x11++) {
+   				for(int y11=miny; y11<maxy; y11++) {
+   					for(int z11=minz; z11<maxz; z11++) {
+   						
+   		        		Protection protection = LWC1.findProtection(world9, x11, y11, z11);
+   		        		if(protection != null) {
+   		        			protection.remove();
+   		        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+   		        		}else{
+   		        		
+   		        		}
+   						
+   						
+   					}
+   					
+   				}
+   			}
+
+   	  }
+   	  
+			player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Removed LWCProtections from region: " + args[1]);
+   		}else{
+   			player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "LWCProtections were not removed, you must enable it in the config.");
+   			player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Do not enable it if you do not have LWC installed!");
+   	   		
+   		}
+   	//************************
+		
+		
+		
+		
 	}
 	
 	if (args[0].equalsIgnoreCase("price")){
@@ -952,6 +1169,12 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 				File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[1] + ".schematic");
 				if (this.getConfig().getBoolean("buyland.resetlandonsale") == true){
 				ResetMap(file, v1, world);
+				
+				
+				
+				
+				
+				
 				}
 //END RESET TO DEFAULT	
 				    try
@@ -1057,7 +1280,59 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.*")){
 								   	   	Vector v1 = new Vector(x,y,z);
 								   	   	File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[0] + ".schematic");
 								   	   	ResetMap(file, v1, world);
+								   	   	
 								   	//End of Schematics
+								   	   	
+								   	//test101
+								   		//LWC
+								   		if (this.getConfig().getBoolean("buyland.removelwcprotection") == true){
+								   		   	
+								   		final Plugin plugin;
+								   		plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+								   		if(plugin != null && plugin instanceof LWCPlugin) {
+								   			LWC1 = ((LWCPlugin) plugin).getLWC();
+								   		}
+								   		
+								   		
+								   	  World world9 = player.getWorld();
+								   	  RegionManager regionManager2 = this.getWorldGuard().getRegionManager(world9);
+								   	  if(regionManager2.getRegionExact(args[0]) == null){
+								   	  //	this.getServer().getLogger().info("NULL");
+								   	  }else{
+
+								   	  	
+								   	  	ProtectedRegion set4 = regionManager2.getRegionExact(args[0]);
+								   	  	int minx = set4.getMinimumPoint().getBlockX();
+								   	  	int miny = set4.getMinimumPoint().getBlockY();
+								   	  	int minz = set4.getMinimumPoint().getBlockZ();
+
+								   	  	int maxx = set4.getMaximumPoint().getBlockX();
+								   	  	int maxy = set4.getMaximumPoint().getBlockY();
+								   	  	int maxz = set4.getMaximumPoint().getBlockZ();
+
+								   	  	
+								   			for(int x11=minx; x11<maxx; x11++) {
+								   				for(int y11=miny; y11<maxy; y11++) {
+								   					for(int z11=minz; z11<maxz; z11++) {
+								   						
+								   		        		Protection protection = LWC1.findProtection(world1, x11, y11, z11);
+								   		        		if(protection != null) {
+								   		        			protection.remove();
+								   		        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+								   		        		}else{
+								   		        		
+								   		        		}
+								   						
+								   						
+								   					}
+								   				}
+								   			}
+
+								   	  }
+								   		}
+								   	//************************
+								   	   	
+								   	   	
 								   	   	
 							        	DefaultDomain du = set3.getOwners();
 							        	
@@ -1128,6 +1403,55 @@ if (this.getRentConfig().getBoolean("rent." + args[0] + ".rentable") == false &&
 					   	   	File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[0] + ".schematic");
 					   	   	ResetMap(file, v1, world);
 					   	//End of Schematics
+					   	   	
+					   	//test101
+					   		//LWC
+					   		if (this.getConfig().getBoolean("buyland.removelwcprotection") == true){
+					   		   	
+					   		final Plugin plugin;
+					   		plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+					   		if(plugin != null && plugin instanceof LWCPlugin) {
+					   			LWC1 = ((LWCPlugin) plugin).getLWC();
+					   		}
+					   		
+					   		
+					   	  World world9 = player.getWorld();
+					   	  RegionManager regionManager2 = this.getWorldGuard().getRegionManager(world9);
+					   	  if(regionManager2.getRegionExact(args[0]) == null){
+					   	  //	this.getServer().getLogger().info("NULL");
+					   	  }else{
+
+					   	  	
+					   	  	ProtectedRegion set4 = regionManager2.getRegionExact(args[0]);
+					   	  	int minx = set4.getMinimumPoint().getBlockX();
+					   	  	int miny = set4.getMinimumPoint().getBlockY();
+					   	  	int minz = set4.getMinimumPoint().getBlockZ();
+
+					   	  	int maxx = set4.getMaximumPoint().getBlockX();
+					   	  	int maxy = set4.getMaximumPoint().getBlockY();
+					   	  	int maxz = set4.getMaximumPoint().getBlockZ();
+
+					   	  	
+					   			for(int x11=minx; x11<maxx; x11++) {
+					   				for(int y11=miny; y11<maxy; y11++) {
+					   					for(int z11=minz; z11<maxz; z11++) {
+					   						
+					   		        		Protection protection = LWC1.findProtection(world1, x11, y11, z11);
+					   		        		if(protection != null) {
+					   		        			protection.remove();
+					   		        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+					   		        		}else{
+					   		        		
+					   		        		}
+					   						
+					   						
+					   					}
+					   				}
+					   			}
+
+					   	  }
+					   		}
+					   	//************************
 					   	   	
 				        	DefaultDomain du = set3.getOwners();
 				        
@@ -1705,7 +2029,7 @@ if (args[2].equalsIgnoreCase("d") || args[2].equalsIgnoreCase("day")){
 //SELLLAND COMMAND	
 	if (cmd.getName().equalsIgnoreCase("sellland")){ 
 if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.*")){
-	
+	 
 	if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
 		
     	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.error1"));
@@ -1756,6 +2080,7 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 	 set2.setOwners(dd);
 	 set2.setMembers(dd);
 	 set2.setFlag(DefaultFlag.BUYABLE, true);
+	 
 	 if (this.getConfig().getBoolean("buyland.landgreeting") == true){
 			
 	 set2.setFlag(DefaultFlag.GREET_MESSAGE, convertedforsale);
@@ -1780,23 +2105,84 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
    	 this.saveCustomConfig();
    	this.reloadCustomConfig();
    	
+
+//test101
+	//LWC
+   	if (this.getConfig().getBoolean("buyland.removelwcprotection") == true){
+   		
+	final Plugin plugin;
+	plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+	if(plugin != null && plugin instanceof LWCPlugin) {
+		LWC1 = ((LWCPlugin) plugin).getLWC();
+	}
+	
+	
+    World world9 = player.getWorld();
+    RegionManager regionManager2 = this.getWorldGuard().getRegionManager(world9);
+    if(regionManager2.getRegionExact(args[0]) == null){
+    //	this.getServer().getLogger().info("NULL");
+    }else{
+
+    	
+    	ProtectedRegion set4 = regionManager2.getRegionExact(args[0]);
+    	int minx = set4.getMinimumPoint().getBlockX();
+    	int miny = set4.getMinimumPoint().getBlockY();
+    	int minz = set4.getMinimumPoint().getBlockZ();
+
+    	int maxx = set4.getMaximumPoint().getBlockX();
+    	int maxy = set4.getMaximumPoint().getBlockY();
+    	int maxz = set4.getMaximumPoint().getBlockZ();
+
+    	
+		for(int x=minx; x<maxx; x++) {
+			for(int y=miny; y<maxy; y++) {
+				for(int z=minz; z<maxz; z++) {
+					
+					
+	        		Protection protection = LWC1.findProtection(world1, x, y, z);
+	        		if(protection != null) {
+	        			protection.remove();
+	        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+	        		}else{
+	        		
+	        		}
+					
+					
+				}
+			}
+		}
+ 
+    }
+   	}
+//************************
+   	
+   
+//Change Sign   	
 	 if(this.getsignConfig().contains("sign." + args[0])){
 		 
 		 String price = pflag.toString();
 		 
 		 //-----------------
-    
-             //Change Sign
+
              Location signloc = stringToLoc(this.getsignConfig().getString("sign." + args[0]));
-             Sign s = (Sign) signloc.getBlock().getState();
-       
-             s.setLine(0, "[BuyLand]");
-             s.setLine(1, "For Sale");
-             s.setLine(2, args[0]);
-             s.setLine(3, price);
-             s.update();
-        	 
-    	 
+             Block that = signloc.getBlock();
+             
+             if (that.getType() == Material.SIGN_POST || that.getType() == Material.WALL_SIGN){
+            	 
+                 Sign s = (Sign) signloc.getBlock().getState();
+
+                 s.setLine(0, "[BuyLand]");
+                 s.setLine(1, "For Sale");
+                 s.setLine(2, args[0]);
+                 s.setLine(3, price);
+                 s.update();
+            	 
+             }else{
+            	// Maybe create a sign if it doesn't exist?
+
+             }
+             
+
 		 //-------------
 		 
 	 }
@@ -1811,7 +2197,58 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
    	   	File file = new File(getDataFolder() + File.separator + "data" + File.separator + args[0] + ".schematic");
    	   	ResetMap(file, v1, world);
    	//End of Schematics
+   	   	
+
    	}
+   	
+  //test101
+  	//LWC
+  	if (this.getConfig().getBoolean("buyland.removelwcprotection") == true){
+  	   	
+  	final Plugin plugin;
+  	plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+  	if(plugin != null && plugin instanceof LWCPlugin) {
+  		LWC1 = ((LWCPlugin) plugin).getLWC();
+  	}
+  	
+  	
+    World world9 = player.getWorld();
+    RegionManager regionManager2 = this.getWorldGuard().getRegionManager(world9);
+    if(regionManager2.getRegionExact(args[0]) == null){
+    //	this.getServer().getLogger().info("NULL");
+    }else{
+
+    	
+    	ProtectedRegion set4 = regionManager2.getRegionExact(args[0]);
+    	int minx = set4.getMinimumPoint().getBlockX();
+    	int miny = set4.getMinimumPoint().getBlockY();
+    	int minz = set4.getMinimumPoint().getBlockZ();
+
+    	int maxx = set4.getMaximumPoint().getBlockX();
+    	int maxy = set4.getMaximumPoint().getBlockY();
+    	int maxz = set4.getMaximumPoint().getBlockZ();
+
+    	
+  		for(int x11=minx; x11<maxx; x11++) {
+  			for(int y11=miny; y11<maxy; y11++) {
+  				for(int z11=minz; z11<maxz; z11++) {
+  					
+  	        		Protection protection = LWC1.findProtection(world1, x11, y11, z11);
+  	        		if(protection != null) {
+  	        			protection.remove();
+  	        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+  	        		}else{
+  	        		
+  	        		}
+  					
+  					
+  				}
+  			}
+  		}
+
+    }
+  	}
+  //************************
 
    	
 	    try
@@ -1834,14 +2271,34 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 	}
 		   }
 	
-	
-	
+
+
 //BUYLAND COMMAND!
 	if (cmd.getName().equalsIgnoreCase("buyland")){
 	if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.*")){
 		
-
+		
 		if(args.length > 1){
+			
+			
+//Begin Home
+			if (player.hasPermission("buyland.tp") || player.hasPermission("buyland.*")){
+		if (args[0].equalsIgnoreCase("tp")){
+			if(args.length < 2){
+				player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Usage: /buyland tp REGION");
+			}else{
+				if(this.getsignConfig().contains("sign." + args[1])){
+					
+                Location tptosign = stringToLoc(this.getsignConfig().getString("sign." + args[1]));
+				player.teleport(tptosign);
+				}else{
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Teleportation has not been enabled for this region or it does not exist.");
+						
+				}
+			}
+		}
+		}
+			
 		//Begin AddMEMBER
 			if (player.hasPermission("buyland.buy.addmember") || player.hasPermission("buyland.*")){
 		if (args[0].equalsIgnoreCase("addmember")){
@@ -1974,6 +2431,37 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 			}
 				//END RemoveMEMBER
 		}else{
+			
+				//Begin list
+				
+			if (args[0].equalsIgnoreCase("list")){
+				if (player.hasPermission("buyland.list") || player.hasPermission("buyland.*")){
+				if(args.length > 1){
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Usage: /buyland list");
+				}else{ 
+	World w1 = player.getWorld();
+					Map<String, ProtectedRegion> regionMap = WGBukkit.getRegionManager(w1).getRegions();
+					player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "You own regions: ");
+					for(ProtectedRegion region : regionMap.values()) {	
+					if(region.isOwner(player.getName())) {	
+				if(region.getFlag(DefaultFlag.BUYABLE) == null){
+				//	player.sendMessage("null" + region.getId());
+				}else{
+						if(region.getFlag(DefaultFlag.BUYABLE) == false){
+							player.sendMessage(" " + region.getId());
+								
+						}
+					}				
+					}
+					}	
+					
+					
+				}
+			}
+			
+				
+			}else{
+			
 		
 		if (this.getRentConfig().contains("rent." + args[0] + ".rentable")){
         	String convertederror1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.rent.error1"));
@@ -2032,27 +2520,6 @@ if (numofland +1 > maxofland){
      EconomyResponse r = econ.withdrawPlayer(player.getName(), pflag);
      if(r.transactionSuccess()) {
     	 
-    	 if(this.getsignConfig().contains("sign." + args[0])){
-    		 
-    		 //-----------------
-        	 
-                 //Change Signs
-                 Location signloc = stringToLoc(this.getsignConfig().getString("sign." + args[0]));
-                 Sign s = (Sign) signloc.getBlock().getState();
-           
-                 s.setLine(0, "[BuyLand]");
-                 s.setLine(1, "Sale Back");
-                 s.setLine(2, args[0]);
-                 s.setLine(3, player.getName());
-                 s.update();
-            	 
-        	 
-    		 //-------------
-    		 
-    	 }
-
-
-    	 
     	 
     	 String convertedb = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.bought"));
     	    		
@@ -2109,10 +2576,96 @@ if (numofland +1 > maxofland){
     	 			e.printStackTrace();
     	 		}
     		}
-    	 
-    	 
 //END schematics
          
+    		
+    		
+    		
+    		
+//change sign    		
+if(this.getsignConfig().contains("sign." + args[0])){
+    		 
+    		 //-----------------
+                 //Change Signs
+                 Location signloc = stringToLoc(this.getsignConfig().getString("sign." + args[0]));
+                 
+                 Block that = signloc.getBlock();
+                 
+                 if (that.getType() == Material.SIGN_POST || that.getType() == Material.WALL_SIGN){
+                 Sign s = (Sign) signloc.getBlock().getState();
+           
+                 s.setLine(0, "[BuyLand]");
+                 s.setLine(1, "Sale Back");
+                 s.setLine(2, args[0]);
+                 s.setLine(3, player.getName());
+                 s.update();
+            	 
+        	                  }else{
+                	// Maybe create a sign if it doesnt exist?
+            	  
+                 }
+    		 //-------------
+      
+}
+
+
+
+
+//test101
+	//LWC
+	if (this.getConfig().getBoolean("buyland.removelwcprotection") == true){
+	   	
+	final Plugin plugin;
+	plugin = Bukkit.getServer().getPluginManager().getPlugin("LWC");
+	if(plugin != null && plugin instanceof LWCPlugin) {
+		LWC1 = ((LWCPlugin) plugin).getLWC();
+	}
+	
+	
+  World world9 = player.getWorld();
+  RegionManager regionManager2 = this.getWorldGuard().getRegionManager(world9);
+  if(regionManager2.getRegionExact(args[0]) == null){
+  //	this.getServer().getLogger().info("NULL");
+  }else{
+
+  	
+  	ProtectedRegion set4 = regionManager2.getRegionExact(args[0]);
+  	int minx = set4.getMinimumPoint().getBlockX();
+  	int miny = set4.getMinimumPoint().getBlockY();
+  	int minz = set4.getMinimumPoint().getBlockZ();
+
+  	int maxx = set4.getMaximumPoint().getBlockX();
+  	int maxy = set4.getMaximumPoint().getBlockY();
+  	int maxz = set4.getMaximumPoint().getBlockZ();
+
+  	
+		for(int x11=minx; x11<maxx; x11++) {
+			for(int y11=miny; y11<maxy; y11++) {
+				for(int z11=minz; z11<maxz; z11++) {
+					
+	        		Protection protection = LWC1.findProtection(world1, x11, y11, z11);
+	        		if(protection != null) {
+	        			protection.remove();
+	        		//this.getServer().getLogger().info("Removed LWC Protection from Plot: " + args[0]);
+	        		}else{
+	        		
+	        		}
+					
+					
+				}
+			}
+		}
+
+  }
+	}
+//************************
+    		
+    		
+    		
+    		
+    		
+    		
+    		
      } else {
     	 
     	 String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.cantafford"));
@@ -2136,13 +2689,12 @@ if (numofland +1 > maxofland){
 	}
         }
 		}
-        
+		}
 	}
 	
 		
 	}else{
 		String convertedgeneral = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.permission"));
-		
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral);
 	}
 	
