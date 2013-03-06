@@ -151,22 +151,17 @@ event.setLine(2, "Invalid Region");
 	
 	    RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(Economy.class);
 	    econ = rsp.getProvider();
-	    
-		
 	final Player p = event.getPlayer();
 	
+	
+//Stops players from breaking signs.	
 	if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
 	if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
-	
 	Sign s = (Sign) event.getClickedBlock().getState();
-	 
 	if (s.getLine(0).equalsIgnoreCase("[BuyLand]") || (s.getLine(0).contains("[BuyLand]"))) {
-	//------------------	
-		
         Location loc = event.getClickedBlock().getLocation();
         loc.setY(loc.getY() - 1);
         loc.setX(loc.getX() - 1);
-
 	if (!p.hasPermission("buyland.signbreak") || !p.hasPermission("buyland.*")) {
 	p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.RED + "You can not break this sign.");
 	event.setCancelled(true);
@@ -175,6 +170,8 @@ event.setLine(2, "Invalid Region");
 	}
 	}
 	}
+//Stops Players from breakins signs.	
+	
 	 
 	if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
 	if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
@@ -184,26 +181,22 @@ event.setLine(2, "Invalid Region");
 	if (s.getLine(0).equalsIgnoreCase("[BuyLand]") || (s.getLine(0).contains("[BuyLand]"))) {
 		
 		
-if (p.hasPermission("buyland.signuse") || !p.hasPermission("buyland.*")) {
-	
+if (p.hasPermission("buyland.signuse") || p.hasPermission("buyland.*")) {
 	String plotname = s.getLine(2).toString();
 	
-//RENT SIGN	
 	
+//RENT SIGN	
 	if (s.getLine(1).equalsIgnoreCase("For Rent") || (s.getLine(1).contains("FOR RENT"))) {
 		if (p.hasPermission("buyland.rent") || p.hasPermission("buyland.*")){
-//-------------------		
-
 					   String line3 = s.getLine(3);
-						
-						Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "rentland " + plotname + " " + line3);
-
-			
-//-----------------			
+						Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "rentland " + plotname + " " + line3);		
 	}else{
 		p.sendMessage(ChatColor.DARK_RED + "BuyLand: Sorry you do not have permission to rent land.");
 	}
 	}
+	
+	
+	
 	
 //Sale Back SIGN	
 	
@@ -266,24 +259,17 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 //Buy Sign	
 	if (s.getLine(1).equalsIgnoreCase("For Sale")) {
 		if (p.hasPermission("buyland.buy") || p.hasPermission("buyland.*")){
-	//--------------------------------
-		
-		     double bal = econ.getBalance(p.getName());
-		     
-			String sb = s.getLine(3);
-			
-			double signbal = Double.parseDouble(sb);
-			
 
-			
+		     double bal = econ.getBalance(p.getName());
+			String sb = s.getLine(3);
+			double signbal = Double.parseDouble(sb);
+
 			   if(hashbuy.containsKey(plotname))
 			    {
-					
-				 
+
 				   long time = hashbuy.get(plotname);
 				   int timebuy = 3 * 1000;
 				   if(System.currentTimeMillis() - time < timebuy){
-					//   p.sendMessage("Error 100");
 			        	 return;
 				   }else{
 					   
@@ -383,13 +369,9 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 						     String convertednotforsale = ChatColor.translateAlternateColorCodes('&', plugin.getlanguageConfig().getString("buyland.price.dontown"));
 								
 							 p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertednotforsale);
-						
-				  	  		
-				  	  	}
-					
-					
 	
-					
+				  	  	}
+
 			    }
 			
 //----------------------------------
