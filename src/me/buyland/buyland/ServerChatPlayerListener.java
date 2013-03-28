@@ -1,6 +1,7 @@
 package me.buyland.buyland;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import me.buyland.buyland.main;
 import net.milkbowl.vault.chat.Chat;
@@ -26,6 +27,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
+import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -37,14 +39,62 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	public static Economy econ = null;
 	public static Chat chat = null;
 	
+	
+	
 	public ServerChatPlayerListener(main instance) {
 		plugin = instance;
 	}
 	
 	public static HashMap<String, Long> hashbuy = new HashMap<String, Long>();
 	
+	
+	public static String elapsedTime(long start, long end){
+
+		String auxRet= "";
+
+		long aux = end - start;
+		long days=0, hours=0, minutes = 0, seconds = 0;
+		//days
+		if (aux > 24*60*60*1000){
+		days = aux/(24*60*60*1000);
+		}
+		aux = aux%(24*60*60*1000);
+		//hours
+		if (aux > 60*60*1000){
+		hours = aux/(60*60*1000);
+		}
+		aux = aux%(60*60*1000);
+		//minutes
+		if (aux > 60*1000){
+		minutes = aux/(60*1000);
+		}
+		aux = aux%(60*1000);
+		//seconds
+		if (aux > 1000){
+		seconds = aux/(1000);
+		}
+		//milliseconds = aux%1000;
+
+		if(days>0){
+		auxRet = days +" days " ;
+		}
+		if(days != 0 || hours>0){
+		auxRet += hours+ " hours " ;
+		}
+		if(days != 0 || hours!= 0 || minutes>0){
+		auxRet += minutes +" minutes " ;
+		}
+		if(days != 0 || hours!= 0 || minutes!=0 || seconds>0){
+		auxRet += seconds +" seconds " ;
+		}
+		//auxRet += milliseconds +" milliseconds ";
+
+		return auxRet;
+		}
+	
 	@EventHandler(priority = EventPriority.HIGH)
 	   public void onPlayerjoin(PlayerJoinEvent event){
+		
 		//This adds any user who joins the server to the DB list.
 		Player player = event.getPlayer();
 		String pn = player.getName();
@@ -52,6 +102,37 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 		plugin.getCustomConfig().addDefault(pn, 0);
 		plugin.getCustomConfig().options().copyDefaults(true);
 		plugin.saveCustomConfig();
+		
+		plugin.getrentdbConfig().addDefault(pn, 0);
+		plugin.getrentdbConfig().options().copyDefaults(true);
+		plugin.saverentdbConfig();
+		
+		if(plugin.getConfig().getBoolean("buyland.notifyplayerofrenttime") == true){
+			
+		World w1 = player.getWorld();
+		Map<String, ProtectedRegion> regionMap = WGBukkit.getRegionManager(w1).getRegions();
+		//player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "You own regions: ");
+		for(ProtectedRegion region : regionMap.values()) {	
+		if(region.isOwner(player.getName())) {	
+	if(region.getFlag(DefaultFlag.BUYABLE) == null){
+	//	player.sendMessage("Null " + region.getId());
+	}else{
+			if(region.getFlag(DefaultFlag.BUYABLE) == false){
+				//player.sendMessage(" " + region.getId());
+					
+				if (plugin.getRentConfig().contains("rent." + region.getId() + ".time")){
+				long end = plugin.getRentConfig().getLong("rent." + region.getId() + ".time");
+				long start = System.currentTimeMillis();
+		    	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Time left for " + region.getId() + ": " + elapsedTime(start, end));
+				}
+				
+				
+			}
+		}				
+		}
+		}	
+		
+	}
 	}
 	
 	
@@ -69,7 +150,7 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
         Sign s = (Sign) event.getBlock().getState();
         
        if(event.getLine(0).contains("[BuyLand]") || event.getLine(0).equalsIgnoreCase("[BuyLand]")){
-       if(p.hasPermission("buyland.signcreate") || p.hasPermission("buyland.*")){
+       if(p.hasPermission("buyland.signcreate") || p.hasPermission("buyland.all")){
     	   
            event.setLine(0, "[BuyLand]"); 
   //-----               
@@ -121,10 +202,34 @@ event.setLine(2, "Invalid Region");
 event.setLine(2, "Invalid Region");
 	        }else{
         	
+	        	
+	        	Location signloc = s.getLocation();
+	            String location = (signloc.getWorld().getName() + ":" + signloc.getX() + ":" + signloc.getY() + ":" + signloc.getZ());
+	            String signname = event.getLine(2);
+	            plugin.getsignConfig().set("sign." + signname, location);
+	            plugin.savesignConfig();
+	            plugin.reloadsignConfig();
+	        	
+	        	
 	        }
-	        }else if (event.getLine(1).equalsIgnoreCase("TEST")){
-
-	            
+	        }else if (event.getLine(1).equalsIgnoreCase("unrent")){
+//UNRENT COMMAND
+	        	event.setLine(1, "UnRent");
+	        	
+				String plotname = event.getLine(2);
+		        World world1 = p.getWorld();
+		        RegionManager regionManager = plugin.getWorldGuard().getRegionManager(world1);
+		        if(regionManager.getRegionExact(plotname) == null){
+	event.setLine(2, "Invalid Region");
+		        }else{
+	        	
+		        	
+		        	
+		        	
+		        	
+		        }
+	        	
+//END UNRENT COMMAND	
 	        }else{ 	
         event.setLine(1, "Error");
            }
@@ -162,7 +267,7 @@ event.setLine(2, "Invalid Region");
         Location loc = event.getClickedBlock().getLocation();
         loc.setY(loc.getY() - 1);
         loc.setX(loc.getX() - 1);
-	if (!p.hasPermission("buyland.signbreak") || !p.hasPermission("buyland.*")) {
+	if (!p.hasPermission("buyland.signbreak") || !p.hasPermission("buyland.all")) {
 	p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.RED + "You can not break this sign.");
 	event.setCancelled(true);
 	return;
@@ -181,13 +286,13 @@ event.setLine(2, "Invalid Region");
 	if (s.getLine(0).equalsIgnoreCase("[BuyLand]") || (s.getLine(0).contains("[BuyLand]"))) {
 		
 		
-if (p.hasPermission("buyland.signuse") || p.hasPermission("buyland.*")) {
+if (p.hasPermission("buyland.signuse") || p.hasPermission("buyland.all")) {
 	String plotname = s.getLine(2).toString();
 	
 	
 //RENT SIGN	
 	if (s.getLine(1).equalsIgnoreCase("For Rent") || (s.getLine(1).contains("FOR RENT"))) {
-		if (p.hasPermission("buyland.rent") || p.hasPermission("buyland.*")){
+		if (p.hasPermission("buyland.rent") || p.hasPermission("buyland.all")){
 					   String line3 = s.getLine(3);
 						Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "rentland " + plotname + " " + line3);		
 	}else{
@@ -201,7 +306,7 @@ if (p.hasPermission("buyland.signuse") || p.hasPermission("buyland.*")) {
 //Sale Back SIGN	
 	
 		if (s.getLine(1).equalsIgnoreCase("Sale Back")) {
-			if (p.hasPermission("buyland.sell") || p.hasPermission("buyland.*")){
+			if (p.hasPermission("buyland.sell") || p.hasPermission("buyland.all")){
 			
 		
 		World world2 = p.getWorld();
@@ -258,7 +363,7 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 	
 //Buy Sign	
 	if (s.getLine(1).equalsIgnoreCase("For Sale")) {
-		if (p.hasPermission("buyland.buy") || p.hasPermission("buyland.*")){
+		if (p.hasPermission("buyland.buy") || p.hasPermission("buyland.all")){
 
 		     double bal = econ.getBalance(p.getName());
 			String sb = s.getLine(3);
@@ -300,13 +405,14 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 							
 				    	 if (plugin.getConfig().getBoolean("buyland.breaksignonbuy") == true){
 						    	s.getBlock().setType(Material.AIR);
-						    	 }
+						    	 }else{
 						    	 
 						        s.setLine(0, "[BuyLand]");
 						        s.setLine(1, "Sale Back");
 						        s.setLine(2, plotname);
 						        s.setLine(3, p.getName());
 						        s.update();
+						    	 }
 						        Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "buyland " + plotname);
 			   hashbuy.remove(plotname);
 			   

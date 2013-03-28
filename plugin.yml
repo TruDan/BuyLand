@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.5.9
+version: 0.6.2
 main: me.buyland.buyland.main
 description: Buy, Sell and Rent worldGuard Regions
 authors: [chriztopia]
@@ -47,7 +47,7 @@ permissions:
     buyland.admin:
         description: Admin Commands for BuyLand.
         default: op
-    buyland.*:
+    buyland.all:
         description: All Commands.
         default: op
     buyland.signuse:
