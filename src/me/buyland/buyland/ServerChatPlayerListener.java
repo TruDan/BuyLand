@@ -94,16 +94,33 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	
 	@EventHandler(priority = EventPriority.HIGH)
 	   public void onPlayerjoin(PlayerJoinEvent event){
-		
+		 
 		//This adds any user who joins the server to the DB list.
 		Player player = event.getPlayer();
-		String pn = player.getName();
+		String Cpn = player.getName();
+		String pn = player.getName().toLowerCase();
 		
-		plugin.getCustomConfig().addDefault(pn, 0);
+		if(plugin.getCustomConfig().contains(Cpn)){
+			int t = plugin.getCustomConfig().getInt(Cpn);
+			plugin.getCustomConfig().addDefault(pn, t);
+		}else{
+			plugin.getCustomConfig().addDefault(pn, 0);
+		}
+		
+		
 		plugin.getCustomConfig().options().copyDefaults(true);
 		plugin.saveCustomConfig();
 		
-		plugin.getrentdbConfig().addDefault(pn, 0);
+		
+		if(plugin.getrentdbConfig().contains(Cpn)){
+			int t = plugin.getrentdbConfig().getInt(Cpn);
+			plugin.getrentdbConfig().addDefault(pn, t);
+		}else{
+			plugin.getrentdbConfig().addDefault(pn, 0);
+		}
+		
+		
+		
 		plugin.getrentdbConfig().options().copyDefaults(true);
 		plugin.saverentdbConfig();
 		
@@ -139,15 +156,18 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onSignChange(SignChangeEvent event) {
-		
+	//	if(!(event.getBlock().getState() instanceof Sign)) return;
+		//HERE	
+
         Player p = event.getPlayer();
         
-        
+       
         Location loc = event.getBlock().getLocation();
         loc.setY(loc.getY() - 1);
         loc.setX(loc.getX() - 1);
         
         Sign s = (Sign) event.getBlock().getState();
+        
         
        if(event.getLine(0).contains("[BuyLand]") || event.getLine(0).equalsIgnoreCase("[BuyLand]")){
        if(p.hasPermission("buyland.signcreate") || p.hasPermission("buyland.all")){
@@ -253,6 +273,8 @@ event.setLine(2, "Invalid Region");
 
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onSignUse(PlayerInteractEvent event) {
+//if(!(event.getClickedBlock().getState() instanceof Sign)) return;
+//HERE	
 	
 	    RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(Economy.class);
 	    econ = rsp.getProvider();
@@ -261,8 +283,12 @@ event.setLine(2, "Invalid Region");
 	
 //Stops players from breaking signs.	
 	if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
-	if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
-	Sign s = (Sign) event.getClickedBlock().getState();
+		
+	if (event.getClickedBlock().getType() == Material.SIGN || event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
+		if(!(event.getClickedBlock().getState() instanceof Sign)) return;
+
+		
+		Sign s = (Sign) event.getClickedBlock().getState();
 	if (s.getLine(0).equalsIgnoreCase("[BuyLand]") || (s.getLine(0).contains("[BuyLand]"))) {
         Location loc = event.getClickedBlock().getLocation();
         loc.setY(loc.getY() - 1);
@@ -279,10 +305,11 @@ event.setLine(2, "Invalid Region");
 	
 	 
 	if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-	if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
+	if (event.getClickedBlock().getType() == Material.SIGN || event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
 	
 	Sign s = (Sign) event.getClickedBlock().getState();
 	 
+	
 	if (s.getLine(0).equalsIgnoreCase("[BuyLand]") || (s.getLine(0).contains("[BuyLand]"))) {
 		
 		
@@ -304,10 +331,13 @@ if (p.hasPermission("buyland.signuse") || p.hasPermission("buyland.all")) {
 	
 	
 //Sale Back SIGN	
-	
+
 		if (s.getLine(1).equalsIgnoreCase("Sale Back")) {
+
 			if (p.hasPermission("buyland.sell") || p.hasPermission("buyland.all")){
-			
+				if(p.isSneaking()){
+				//	p.sendMessage("DEBUG: Player is Sneaking...");
+
 		
 		World world2 = p.getWorld();
 	    RegionManager regionManager1 = plugin.getWorldGuard().getRegionManager(world2);
@@ -355,6 +385,16 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
   	  		p.sendMessage(ChatColor.DARK_RED + "BuyLand: Sorry you are not the owner of this region!");
   	  	}
 
+  	  	
+			
+				}else{
+				//	p.sendMessage("DEBUG: Player is NOT Sneaking...");
+				     String convertednotsneak = ChatColor.translateAlternateColorCodes('&', plugin.getlanguageConfig().getString("buyland.sell.notsneak"));
+						
+					p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertednotsneak);
+							
+				}
+  	  	
 		
 		}else{
 			p.sendMessage(ChatColor.DARK_RED + "BuyLand: Sorry you do not have permission to sale land.");
@@ -393,6 +433,23 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 							
 							String nm = p.getName();
 							int numofland = plugin.getCustomConfig().getInt(nm);
+							
+							
+							//int maxofland;
+
+							//if (p.hasPermission("buyland.staff1")){
+							//maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff1");
+							//}else if(p.hasPermission("buyland.staff2")){
+							//maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff2");
+							//}else if(p.hasPermission("buyland.admin")){
+							//maxofland = plugin.getConfig().getInt("buyland.maxamountoflandadmin");
+							
+							//}else{
+							//maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
+							//}
+							
+							
+							
 							int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
 							
 
@@ -454,6 +511,21 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 						int numofland = plugin.getCustomConfig().getInt(nm);
 						int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
 						
+						
+					//	int maxofland;
+
+					//	if (p.hasPermission("buyland.staff1")){
+					//	maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff1");
+					//	}else if(p.hasPermission("buyland.staff2")){
+					//	maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff2");
+					//	}else if(p.hasPermission("buyland.admin")){
+					//	maxofland = plugin.getConfig().getInt("buyland.maxamountoflandadmin");
+						
+					//	}else{
+					//	maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
+					//	}
+						
+						
 
 					if (numofland +1 > maxofland){
 						String convertedmax = ChatColor.translateAlternateColorCodes('&', plugin.getlanguageConfig().getString("buyland.buy.max"));
@@ -489,7 +561,7 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 	}
 	
 	}else{
-p.sendMessage("You are not allowed to use plugin.");
+p.sendMessage("[BUYLAND] You do not have the correct permissions to use this.");
 event.setCancelled(true);
 return;
 }

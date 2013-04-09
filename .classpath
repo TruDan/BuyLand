@@ -5,7 +5,8 @@
 	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/WorldEdit.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/WorldGuard.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/Vault.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/bukkit-1.4.7-R1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/craftbukkit-1.5-R0.1.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/LWC.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Desktop/Desktop/API/ChestShop.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -309,6 +309,9 @@ public void onEnable() {
 	getlanguageConfig().addDefault("buyland.sell.back1", "You have sold back the land for ");
 	getlanguageConfig().addDefault("buyland.sell.back2", ". Your balance is: %s");
 	getlanguageConfig().addDefault("buyland.sell.dontown", "You do not own this land!");
+	getlanguageConfig().addDefault("buyland.sell.notsneak", "You must be sneaking when you click a sign to sell land!");
+	
+	
 	
 	getlanguageConfig().addDefault("buyland.member.removemember", "Removed Member!");
 	getlanguageConfig().addDefault("buyland.member.addmember", "Added Member!");
@@ -359,7 +362,6 @@ public void onEnable() {
 	config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
 	config.addDefault("buyland.defaultprice", 100.00);
 	config.addDefault("buyland.percentsellback", 1.00);
-	config.addDefault("buyland.maxamountofland", 1);
 	config.addDefault("buyland.resetlandonsale", true);
 	config.addDefault("buyland.landpriority", 1);
 	config.addDefault("buyland.usepriceperblock", false);
@@ -373,13 +375,103 @@ public void onEnable() {
 	config.addDefault("buyland.defaultrentcostpermin", 1.0);
 	config.addDefault("buyland.maxamountofrentland", 1);
 	config.addDefault("buyland.notifyplayerofrenttime", true);
-
+	config.addDefault("buyland.maxamountofland", 1);
+	config.addDefault("buyland.offlinelimitindays", 30);
+	config.addDefault("buyland.offlinelimitenable", true);
+	
 	config.options().copyDefaults(true);
 	saveConfig();
 	getWorldGuard();
 	
 
+	new BukkitRunnable()
+	{
+    public void run() {
+    	
+    	if(config.getBoolean("buyland.offlinelimitenable") == true){
+    		
+    	
+	World w1 = Bukkit.getWorld("world");
+	Map<String, ProtectedRegion> regionMap = WGBukkit.getRegionManager(w1).getRegions();
+	for(ProtectedRegion region : regionMap.values()) {
+			
+if(region.getFlag(DefaultFlag.BUYABLE) == null){
+
+}else{
+		if(region.getFlag(DefaultFlag.BUYABLE) == false){
+			
+			DefaultDomain du = region.getOwners();
+	    	String pn = du.toUserFriendlyString();
+
+	    long lastseen = Bukkit.getOfflinePlayer(pn).getLastPlayed();
+	    
+	    long current = System.currentTimeMillis();
+	    
+        long difference = current - lastseen;
+
+        long con = getConfig().getLong("buyland.offlinelimitindays");
+        
+       // long month = 2592000000L;
+        
+      // long month =  1728000000L;
+        long month = con * 24*60*60*1000L;
+
+        if (difference > month){
+        	
+        	
+		       	for (Player p2 : Bukkit.getOnlinePlayers()) {
+	        		if(p2.isOp()){
+	        			
+	        			if (getRentConfig().contains("rent." + region.getId() + ".rentable")){
+	        				
+	        		    //	String convertederror1 = ChatColor.translateAlternateColorCodes('&', getlanguageConfig().getString("buyland.rent.error1"));
+	        		    //	p2.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
+
+	        			}else{	
+	        			
+     				//Bukkit.getLogger().info("Players: " + pn + " Region: " + region.getId());
+        				//p2.sendMessage("" + month);
+        				p2.sendMessage("Owner: " + pn + " Region: " + region.getId());
+	        			Bukkit.dispatchCommand(Bukkit.getPlayer(p2.getName()), "abl forsale " + region.getId());		
+	        			
+	        			
+	        		//	int numofland = getCustomConfig().getInt(pn);
+	   			   //	 int finalland = numofland - 1;
+	   			   //		getCustomConfig().set(pn, finalland);
+	   			  // 	saveCustomConfig();
+	   			   //	reloadCustomConfig();
+	   			   	
+	   			   	
+	   			   	
+	   			   	
+	        			
+	        			}
+	        
 	
+        	}
+        }
+		}
+        
+				
+		}
+	}				
+	//}
+
+
+//--------------------------------------	
+	
+
+	}	
+	
+	
+	
+    }else{
+    	//Bukkit.getLogger().info("Auto Remove Disabled...");
+		
+    }
+	
+    }
+	}.runTaskTimer(this, 20L, 1200L);
 	
 	new BukkitRunnable()
 	{
@@ -848,12 +940,17 @@ public Location stringToLoc(String string){
     return new Location(world, x, y, z);
 }
 
+
+
+
 public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	
+	
 	
 	Player player = null;
 	if (sender instanceof Player) {
 		player = (Player) sender;
-	}
+	
 
 	if (args.length == 0){
 		//RELOADBUYLADN COMMAND
@@ -877,29 +974,31 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 //General HELP
 							PluginDescriptionFile pdffile = this.getDescription();
 							
-							if (cmd.getName().equalsIgnoreCase("rentland")){ 
+							if (cmd.getName().equalsIgnoreCase("rentland")){
+								player.sendMessage(ChatColor.RED + "BuyLand: V" +  pdffile.getVersion() + ChatColor.GOLD + " is a product of chriztopia.com");
+								
 							if (player.hasPermission("buyland.rent") || player.hasPermission("buyland.all")){
-								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] cost - Check cost of rentable land");  
-								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] 1 minute - Rent land");  
+								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] cost - Check cost of rentable region.");  
+								player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] 1 minute - Rent a region.");  
 								}
 							}
 							
 		if (cmd.getName().equalsIgnoreCase("buyland")){ 				
 		player.sendMessage(ChatColor.RED + "BuyLand: V" +  pdffile.getVersion() + ChatColor.GOLD + " is a product of chriztopia.com");
 		if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.all")){
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland [region_name] - Buy land");  
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland [region_name] - Buy a region.");  
 		}
-		if (player.hasPermission("buyland.addmember") || player.hasPermission("buyland.all")){
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland addmember [region_name] [player_name] - Add Member to region");  
+		if (player.hasPermission("buyland.buy.addmember") || player.hasPermission("buyland.all")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland addmember [region_name] [player_name] - Add Member to region.");  
 		}
-		if (player.hasPermission("buyland.removemember") || player.hasPermission("buyland.all")){
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland removemember [region_name] [player_name] - Remove Member from region");  
+		if (player.hasPermission("buyland.buy.removemember") || player.hasPermission("buyland.all")){
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland removemember [region_name] [player_name] - Remove Member from region.");  
 		}
 		if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")){
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/priceland [region_name] - Prices land thats buyable");  
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/priceland [region_name] - Prices a region thats buyable.");  
 		}
 		if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.all")){
-		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/sellland [region_name] - Sell land");  
+		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/sellland [region_name] - Sell a region.");  
 		}
 		if (player.hasPermission("buyland.tp") || player.hasPermission("buyland.all")){
 		player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/buyland tp [region_name] - Teleport you to region.");  
@@ -909,18 +1008,22 @@ public boolean onCommand(CommandSender sender, Command cmd, String label, String
 		}
 
 					   }
-		if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")){
+		
+			
 if (cmd.getName().equalsIgnoreCase("abl") || (cmd.getName().equalsIgnoreCase("adminbuyland"))){ 
+	player.sendMessage(ChatColor.RED + "BuyLand: V" +  pdffile.getVersion() + ChatColor.GOLD + " is a product of chriztopia.com");
+	
+	if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")){
 			player.sendMessage(" ");
 			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.YELLOW + "Admin Commands");
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl forsale [region_name] - Makes a premade region buyable");  
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl save [region_name] - Select with WorldEdit first");  
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl price [region_name] [cost] - Sets a price for buyable land");  
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl list [player] [region_name] - Lists Owned land of player.");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl forsale [region_name] - Makes a premade region buyable.");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl save [region_name] - Select with WorldEdit first.");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl price [region_name] [cost] - Sets a price for buyable region.");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl list [player] [region_name] - Lists Owned region of player.");  
 			
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl reset [region_name] - Resets buyable land");  
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland save [region_name] - Select with WorldEdit first");  
-			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] reset - Reset rentable land");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/abl reset [region_name] - Resets buyable region.");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland save [region_name] - Select with WorldEdit first.");  
+			player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "/rentland [region_name] reset - Reset rentable region.");  
 		
 }
 		}
@@ -944,7 +1047,7 @@ World w1 = player.getWorld();
 		for(ProtectedRegion region : regionMap.values()) {	
 		if(region.isOwner(args[1])) {	
 	if(region.getFlag(DefaultFlag.BUYABLE) == null){
-	//	player.sendMessage("null" + region.getId());
+	
 	}else{
 			if(region.getFlag(DefaultFlag.BUYABLE) == false){
 				player.sendMessage(" " + region.getId());
@@ -1211,6 +1314,38 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")
 				ResetMap(file, v1, world);
 				
 				
+				
+				
+				
+				//Change Sign   	
+				 if(this.getsignConfig().contains("sign." + args[1])){
+					 
+					 String price = pflag.toString();
+					 
+					 //-----------------
+
+			             Location signloc = stringToLoc(this.getsignConfig().getString("sign." + args[1]));
+			             Block that = signloc.getBlock();
+			             
+			             if (that.getType() == Material.SIGN_POST || that.getType() == Material.WALL_SIGN){
+			            	 
+			                 Sign s = (Sign) signloc.getBlock().getState();
+
+			                 s.setLine(0, "[BuyLand]");
+			                 s.setLine(1, "For Sale");
+			                 s.setLine(2, args[1]);
+			                 s.setLine(3, price);
+			                 s.update();
+			            	 
+			             }else{
+			            	// Maybe create a sign if it doesn't exist?
+
+			             }
+			             
+
+					 //-------------
+					 
+				 }
 				
 				
 				
@@ -2780,12 +2915,26 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 	
 	String nm = player.getName();
 	int numofland = this.getCustomConfig().getInt(nm);
+	//int maxofland = this.getConfig().getInt("buyland.maxamountofland");
+	
+
+	//int maxofland;
+
+	//if (player.hasPermission("buyland.staff1")){
+	//maxofland = this.getConfig().getInt("buyland.maxamountoflandstaff1");
+	//}else if(player.hasPermission("buyland.staff2")){
+	//maxofland = this.getConfig().getInt("buyland.maxamountoflandstaff2");
+	//}else if(player.hasPermission("buyland.admin")){
+	//maxofland = this.getConfig().getInt("buyland.maxamountoflandadmin");
+	
+	//}else{
 	int maxofland = this.getConfig().getInt("buyland.maxamountofland");
+	//}
+
 	
 
 if (numofland +1 > maxofland){
 	String convertedmax = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.max"));
-	
 	player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedmax);
 }else{
 		
@@ -2817,11 +2966,14 @@ if (numofland +1 > maxofland){
     	    	set2.setFlag(DefaultFlag.GREET_MESSAGE, null);
     	    }
  	   
+    		
+    		//Land Owned Number
     	 int finalland = numofland + 1;
-    	 
     	 this.getCustomConfig().set(nm, finalland);
     	 this.saveCustomConfig();
-    	 //this.reloadCustomConfig();
+    	 //Land Owned Number
+    	 
+    	 
     	  DefaultDomain dd = new DefaultDomain();
     	    dd.addPlayer(p1);
     	 set2.setOwners(dd);
@@ -2933,28 +3085,17 @@ if(this.getsignConfig().contains("sign." + args[0])){
 
   }
 	}
-//************************
-    		
-    		
-    		
-    		
-    		
-    		
-    		
+//************************	
      } else {
-    	 
     	 String converteda1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.cantafford"));
          sender.sendMessage(String.format(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + converteda1, r.errorMessage));
      }
-
 	    try
 	    {
 	    	regionManager.save();
 	    }
 	     catch (Exception exp)
-	    { }
-	 
-	    
+	    { }   
  }else{
 	  String convertednonbuy = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.buy.dontown"));
 	 player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertednonbuy);
@@ -3049,6 +3190,20 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")
 					    
 				         String nm = player.getName();
 				         int numofland = this.getCustomConfig().getInt(nm);
+				         
+				         
+				     	
+				    //	if (player.hasPermission("buyland.staff1")){
+				    	
+				    //	}else if(player.hasPermission("buyland.staff2")){
+				    //	maxofland = this.getConfig().getInt("buyland.maxamountoflandstaff2");
+				    //	}else if(player.hasPermission("buyland.admin")){
+				    //	maxofland = this.getConfig().getInt("buyland.maxamountoflandadmin");
+				    	
+				    //	}else{
+				    //	maxofland = this.getConfig().getInt("buyland.maxamountofland");
+				    //	}
+				         
 				         int maxofland = this.getConfig().getInt("buyland.maxamountofland");
 				         
 				         String convertedpricemax1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.max1"));
@@ -3079,5 +3234,31 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")
 }
 	return true;
 
+}else{
+	
+	
+	if (cmd.getName().equalsIgnoreCase("reloadbuyland")){
+					  
+						 reloadConfig();  
+						 reloadCustomConfig();
+						 reloadlanguageConfig();
+						 reloadRentConfig();
+						 reloadrentdbConfig();
+						 reloadsignConfig();
+						 
+						String convertedgeneral2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.general.reload"));
+						 sender.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedgeneral2);
+					
+				   
+				   }else{
+					 sender.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "This Command is for ingame only!");
+				   }
+	
+	
+	//------------------
 }
+	return true;
+}
+	
+
 }
