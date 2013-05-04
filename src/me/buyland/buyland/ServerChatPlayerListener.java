@@ -40,7 +40,6 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	public static Chat chat = null;
 	
 	
-	
 	public ServerChatPlayerListener(main instance) {
 		plugin = instance;
 	}
@@ -97,27 +96,27 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 		 
 		//This adds any user who joins the server to the DB list.
 		Player player = event.getPlayer();
-		String Cpn = player.getName();
+		//String Cpn = player.getName();
 		String pn = player.getName().toLowerCase();
 		
-		if(plugin.getCustomConfig().contains(Cpn)){
-			int t = plugin.getCustomConfig().getInt(Cpn);
-			plugin.getCustomConfig().addDefault(pn, t);
-		}else{
+		//if(plugin.getCustomConfig().contains(Cpn)){
+		//	int t = plugin.getCustomConfig().getInt(Cpn);
+		//	plugin.getCustomConfig().addDefault(pn, t);
+		//}else{
 			plugin.getCustomConfig().addDefault(pn, 0);
-		}
+		//}
 		
 		
 		plugin.getCustomConfig().options().copyDefaults(true);
 		plugin.saveCustomConfig();
 		
 		
-		if(plugin.getrentdbConfig().contains(Cpn)){
-			int t = plugin.getrentdbConfig().getInt(Cpn);
-			plugin.getrentdbConfig().addDefault(pn, t);
-		}else{
+		//if(plugin.getrentdbConfig().contains(Cpn)){
+		//	int t = plugin.getrentdbConfig().getInt(Cpn);
+		//	plugin.getrentdbConfig().addDefault(pn, t);
+		//}else{
 			plugin.getrentdbConfig().addDefault(pn, 0);
-		}
+		//}
 		
 		
 		

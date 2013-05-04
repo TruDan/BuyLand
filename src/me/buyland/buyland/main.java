@@ -390,11 +390,18 @@ public void onEnable() {
     	
     	if(config.getBoolean("buyland.offlinelimitenable") == true){
     		
-    	
-	World w1 = Bukkit.getWorld("world");
+    		for (World w1 : Bukkit.getWorlds())
+    		{
+if (w1 == null){
+	return;
+}
+	
 	Map<String, ProtectedRegion> regionMap = WGBukkit.getRegionManager(w1).getRegions();
+
+	
 	for(ProtectedRegion region : regionMap.values()) {
-			
+		
+		
 if(region.getFlag(DefaultFlag.BUYABLE) == null){
 
 }else{
@@ -404,47 +411,34 @@ if(region.getFlag(DefaultFlag.BUYABLE) == null){
 	    	String pn = du.toUserFriendlyString();
 
 	    long lastseen = Bukkit.getOfflinePlayer(pn).getLastPlayed();
-	    
 	    long current = System.currentTimeMillis();
 	    
+	    if(!Bukkit.getOfflinePlayer(pn).hasPlayedBefore()){
+	    	
+	    	return;
+	    	
+	    }
+	    
+	    
         long difference = current - lastseen;
-
         long con = getConfig().getLong("buyland.offlinelimitindays");
-        
-       // long month = 2592000000L;
-        
-      // long month =  1728000000L;
         long month = con * 24*60*60*1000L;
 
         if (difference > month){
         	
         	
 		       	for (Player p2 : Bukkit.getOnlinePlayers()) {
-	        		if(p2.isOp()){
+	        		if(p2.isOp() || p2.hasPermission("buyland.admin")){
 	        			
 	        			if (getRentConfig().contains("rent." + region.getId() + ".rentable")){
 	        				
-	        		    //	String convertederror1 = ChatColor.translateAlternateColorCodes('&', getlanguageConfig().getString("buyland.rent.error1"));
-	        		    //	p2.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertederror1);
-
+	        		   
 	        			}else{	
 	        			
-     				//Bukkit.getLogger().info("Players: " + pn + " Region: " + region.getId());
-        				//p2.sendMessage("" + month);
+     				
         				p2.sendMessage("Owner: " + pn + " Region: " + region.getId());
 	        			Bukkit.dispatchCommand(Bukkit.getPlayer(p2.getName()), "abl forsale " + region.getId());		
-	        			
-	        			
-	        		//	int numofland = getCustomConfig().getInt(pn);
-	   			   //	 int finalland = numofland - 1;
-	   			   //		getCustomConfig().set(pn, finalland);
-	   			  // 	saveCustomConfig();
-	   			   //	reloadCustomConfig();
-	   			   	
-	   			   	
-	   			   	
-	   			   	
-	        			
+	        				        			
 	        			}
 	        
 	
@@ -463,7 +457,7 @@ if(region.getFlag(DefaultFlag.BUYABLE) == null){
 
 	}	
 	
-	
+    	}
 	
     }else{
     	//Bukkit.getLogger().info("Auto Remove Disabled...");
