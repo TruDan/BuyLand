@@ -598,11 +598,29 @@ set2.setFlag(DefaultFlag.ENTRY, null);
 		 reloadrentdbConfig();
 		
 	   	  DefaultDomain dd = new DefaultDomain();
+	   	
 		 dd.removePlayer(pn);
 		 set2.setOwners(dd);
 		 set2.setMembers(dd);
 		 
+		// Check if region has any owners
+		 if (set2.getOwners().size() == 0) {
+		     //it doesnt exit
+		 }else{
+			 for (String p2 : set2.getOwners().getPlayers()) {	
+				 set2.getOwners().removePlayer(p2);
+	        		}
+		 }
 		 
+			// Check if region has any members
+		 if (set2.getMembers().size() == 0) {
+		     //it doesnt exit
+		 }else{
+			 for (String p2 : set2.getMembers().getPlayers()) {	
+				 set2.getMembers().removePlayer(p2);
+	        		}
+		 }
+
 		 
 	    try
 	    {
@@ -1214,7 +1232,7 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")
 		if (this.getConfig().getBoolean("buyland.resetlandonsale") == true){
 		
 		ResetMap(file, v1, world);
-	player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Region Reset to Default!");
+	player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Region Reset to Default! Use forsale command to erase all owners and members!");
 		}else{
 			player.sendMessage(ChatColor.RED + "Buyland: " + ChatColor.WHITE + "Set resetlandonsale to true in the config file to use this feature!");
 		}
@@ -1261,6 +1279,24 @@ if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")
 			   	  DefaultDomain dd = new DefaultDomain();
 				 dd.removePlayer(pn);
 				 set2.setOwners(dd);
+				 
+				// Check if region has any owners
+				 if (set2.getOwners().size() == 0) {
+				     //it doesnt exit
+				 }else{
+					 for (String p2 : set2.getOwners().getPlayers()) {	
+						 set2.getOwners().removePlayer(p2);
+			        		}
+				 }
+				 
+					// Check if region has any members
+				 if (set2.getMembers().size() == 0) {
+				     //it doesnt exit
+				 }else{
+					 for (String p2 : set2.getMembers().getPlayers()) {	
+						 set2.getMembers().removePlayer(p2);
+			        		}
+				 }
 				 
 				 set2.setFlag(DefaultFlag.BUYABLE, true);
 				 
@@ -2482,6 +2518,28 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 	    dd.removePlayer(pn);
 	 set2.setOwners(dd);
 	 set2.setMembers(dd);
+	 
+	 
+	// Check if region has any owners
+			 if (set2.getOwners().size() == 0) {
+			     //it doesnt exit
+			 }else{
+				 for (String p2 : set2.getOwners().getPlayers()) {	
+					 set2.getOwners().removePlayer(p2);
+		        		}
+			 }
+			 
+				// Check if region has any members
+			 if (set2.getMembers().size() == 0) {
+			     //it doesnt exit
+			 }else{
+				 for (String p2 : set2.getMembers().getPlayers()) {	
+					 set2.getMembers().removePlayer(p2);
+		        		}
+			 }
+	 
+	 
+	 
 	 set2.setFlag(DefaultFlag.BUYABLE, true);
 	 
 	 if (this.getConfig().getBoolean("buyland.landgreeting") == true){
@@ -2909,21 +2967,9 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 	
 	String nm = player.getName();
 	int numofland = this.getCustomConfig().getInt(nm);
-	//int maxofland = this.getConfig().getInt("buyland.maxamountofland");
-	
 
-	//int maxofland;
-
-	//if (player.hasPermission("buyland.staff1")){
-	//maxofland = this.getConfig().getInt("buyland.maxamountoflandstaff1");
-	//}else if(player.hasPermission("buyland.staff2")){
-	//maxofland = this.getConfig().getInt("buyland.maxamountoflandstaff2");
-	//}else if(player.hasPermission("buyland.admin")){
-	//maxofland = this.getConfig().getInt("buyland.maxamountoflandadmin");
-	
-	//}else{
 	int maxofland = this.getConfig().getInt("buyland.maxamountofland");
-	//}
+
 
 	
 
@@ -3186,17 +3232,7 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")
 				         int numofland = this.getCustomConfig().getInt(nm);
 				         
 				         
-				     	
-				    //	if (player.hasPermission("buyland.staff1")){
-				    	
-				    //	}else if(player.hasPermission("buyland.staff2")){
-				    //	maxofland = this.getConfig().getInt("buyland.maxamountoflandstaff2");
-				    //	}else if(player.hasPermission("buyland.admin")){
-				    //	maxofland = this.getConfig().getInt("buyland.maxamountoflandadmin");
-				    	
-				    //	}else{
-				    //	maxofland = this.getConfig().getInt("buyland.maxamountofland");
-				    //	}
+
 				         
 				         int maxofland = this.getConfig().getInt("buyland.maxamountofland");
 				         

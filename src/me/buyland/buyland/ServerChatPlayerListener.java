@@ -170,8 +170,10 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
         
        if(event.getLine(0).contains("[BuyLand]") || event.getLine(0).equalsIgnoreCase("[BuyLand]")){
        if(p.hasPermission("buyland.signcreate") || p.hasPermission("buyland.all")){
+    	   event.setLine(0, "[BuyLand]"); 
+
     	   
-           event.setLine(0, "[BuyLand]"); 
+          
   //-----               
            if (event.getLine(1).equalsIgnoreCase("For Sale")){
         	event.setLine(1, "For Sale");
@@ -257,6 +259,12 @@ event.setLine(2, "Invalid Region");
            s.update();
     	   
        p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "BuyLand Sign Created!");
+       
+       //}else{
+    	//   p.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "Creating a sign on the region it is for will cause problems! Please move the sign outside of the region.");
+             
+      // }
+       
        }else{
        p.sendMessage(ChatColor.RED + "BuyLand: You Do Not Have Permission To Create A BuyLand Sign!");
        event.setLine(0, "Error");
@@ -266,6 +274,8 @@ event.setLine(2, "Invalid Region");
        
        s.update();
        }
+       
+       
 }
 }
 	
