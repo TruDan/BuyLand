@@ -1,7 +1,7 @@
 name: BuyLand
-version: 0.7.3
+version: 0.7.4
 main: me.buyland.buyland.main
-description: Buy, Sell and Rent worldGuard Regions
+description: Buy, Sell and Rent WorldGuard Regions
 authors: [chriztopia]
 website: http://chriztopia.com
 depend: [WorldGuard]

@@ -47,6 +47,23 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	public static HashMap<String, Long> hashbuy = new HashMap<String, Long>();
 	
 	
+	
+	public boolean checkArea(Location player, double minx, double miny, double minz, double maxx, double maxy, double maxz)
+    {
+            if(player.getX() > minx && player.getX() < maxx)
+            {
+                if(player.getY() > miny && player.getY() < maxy)
+                {
+                    if(player.getZ() > minz && player.getZ() < maxz)
+                    {
+                        return true;
+                    }
+                }
+            }
+        return false;
+    } 
+	
+	
 	public static String elapsedTime(long start, long end){
 
 		String auxRet= "";
@@ -117,18 +134,26 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 		//}else{
 			plugin.getrentdbConfig().addDefault(pn, 0);
 		//}
-		
-		
-		
+
 		plugin.getrentdbConfig().options().copyDefaults(true);
 		plugin.saverentdbConfig();
 		
 		if(plugin.getConfig().getBoolean("buyland.notifyplayerofrenttime") == true){
 			
-		World w1 = player.getWorld();
+			
+			
+    		for (World w1 : Bukkit.getWorlds())
+    		{
+if (w1 == null){
+	return;
+}
+			
 		Map<String, ProtectedRegion> regionMap = WGBukkit.getRegionManager(w1).getRegions();
-		//player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + "You own regions: ");
 		for(ProtectedRegion region : regionMap.values()) {	
+			if (region == null){
+				return;
+			}
+			
 		if(region.isOwner(player.getName())) {	
 	if(region.getFlag(DefaultFlag.BUYABLE) == null){
 	//	player.sendMessage("Null " + region.getId());
@@ -148,6 +173,10 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 		}
 		}	
 		
+		
+    		}
+		
+		//END OF TIME
 	}
 	}
 	
@@ -184,6 +213,36 @@ public class ServerChatPlayerListener extends JavaPlugin implements Listener  {
 	        if(regionManager.getRegionExact(plotname) == null){
 event.setLine(2, "Invalid Region");
 	        }else{
+	        	
+	        	//=====================
+	        	//Deny placing a sign within its own region!
+	        	World wor = p.getWorld();
+			    RegionManager regionManager5 = plugin.getWorldGuard().getRegionManager(wor);
+				ProtectedRegion se = regionManager5.getRegionExact(plotname);
+	        	
+				 
+			    
+			    Location ploc = event.getBlock().getLocation();
+			    Location Pos1 = new Location(wor, se.getMaximumPoint().getBlockX(), se.getMaximumPoint().getBlockY(), se.getMaximumPoint().getBlockZ());	   
+			    Location Pos2 = new Location(wor, se.getMinimumPoint().getBlockX(), se.getMinimumPoint().getBlockY(), se.getMinimumPoint().getBlockZ());
+				   
+			    double minx = Math.min(Pos1.getX(), Pos2.getX());
+			    double maxx = Math.max(Pos1.getX(), Pos2.getX());
+			    double miny = Math.min(Pos1.getY(), Pos2.getY());
+			    double maxy = Math.max(Pos1.getY(), Pos2.getY());
+			    double minz = Math.min(Pos1.getZ(), Pos2.getZ());
+			    double maxz = Math.max(Pos1.getZ(), Pos2.getZ());
+				if(checkArea(ploc,minx,miny,minz,maxx,maxy,maxz) == true){
+			//DO SOMETHING
+					event.setLine(1, "ERROR!");
+					event.setLine(2, "ERROR!");
+					 p.sendMessage(ChatColor.RED + "BuyLand: Placing a sign on its own region will cause errors!");
+					 p.sendMessage(ChatColor.RED + "BuyLand: Please place it outside of the region!");
+						
+				}else{
+			//=================	
+			
+	        	
 				World world2 = p.getWorld();
 			    RegionManager regionManager1 = plugin.getWorldGuard().getRegionManager(world2);
 				ProtectedRegion set2 = regionManager1.getRegionExact(plotname);
@@ -212,6 +271,7 @@ event.setLine(2, "Invalid Region");
 	            plugin.savesignConfig();
 	            plugin.reloadsignConfig();
 	        }
+	        }
         	
            }else if (event.getLine(1).equalsIgnoreCase("For Rent")){
         	event.setLine(1, "For Rent");
@@ -224,13 +284,42 @@ event.setLine(2, "Invalid Region");
 	        }else{
         	
 	        	
+	        	//=====================
+	        	//Deny placing a sign within its own region!
+	        	World wor = p.getWorld();
+			    RegionManager regionManager5 = plugin.getWorldGuard().getRegionManager(wor);
+				ProtectedRegion se = regionManager5.getRegionExact(plotname);
+	        	
+				 
+			    
+			    Location ploc = event.getBlock().getLocation();
+			    Location Pos1 = new Location(wor, se.getMaximumPoint().getBlockX(), se.getMaximumPoint().getBlockY(), se.getMaximumPoint().getBlockZ());	   
+			    Location Pos2 = new Location(wor, se.getMinimumPoint().getBlockX(), se.getMinimumPoint().getBlockY(), se.getMinimumPoint().getBlockZ());
+				   
+			    double minx = Math.min(Pos1.getX(), Pos2.getX());
+			    double maxx = Math.max(Pos1.getX(), Pos2.getX());
+			    double miny = Math.min(Pos1.getY(), Pos2.getY());
+			    double maxy = Math.max(Pos1.getY(), Pos2.getY());
+			    double minz = Math.min(Pos1.getZ(), Pos2.getZ());
+			    double maxz = Math.max(Pos1.getZ(), Pos2.getZ());
+				if(checkArea(ploc,minx,miny,minz,maxx,maxy,maxz) == true){
+			//DO SOMETHING
+					event.setLine(1, "ERROR!");
+					event.setLine(2, "ERROR!");
+					 p.sendMessage(ChatColor.RED + "BuyLand: Placing a sign on its own region will cause errors!");
+					 p.sendMessage(ChatColor.RED + "BuyLand: Please place it outside of the region!");
+						
+				}else{
+			//=================	
+	        	
+	        	
 	        	Location signloc = s.getLocation();
 	            String location = (signloc.getWorld().getName() + ":" + signloc.getX() + ":" + signloc.getY() + ":" + signloc.getZ());
 	            String signname = event.getLine(2);
 	            plugin.getsignConfig().set("sign." + signname, location);
 	            plugin.savesignConfig();
 	            plugin.reloadsignConfig();
-	        	
+				}
 	        	
 	        }
 	        }else if (event.getLine(1).equalsIgnoreCase("unrent")){
@@ -244,8 +333,38 @@ event.setLine(2, "Invalid Region");
 	event.setLine(2, "Invalid Region");
 		        }else{
 	        	
+		        	//=====================
+		        	//Deny placing a sign within its own region!
+		        	World wor = p.getWorld();
+				    RegionManager regionManager5 = plugin.getWorldGuard().getRegionManager(wor);
+					ProtectedRegion se = regionManager5.getRegionExact(plotname);
 		        	
-		        	
+					 
+				    
+				    Location ploc = event.getBlock().getLocation();
+				    Location Pos1 = new Location(wor, se.getMaximumPoint().getBlockX(), se.getMaximumPoint().getBlockY(), se.getMaximumPoint().getBlockZ());	   
+				    Location Pos2 = new Location(wor, se.getMinimumPoint().getBlockX(), se.getMinimumPoint().getBlockY(), se.getMinimumPoint().getBlockZ());
+					   
+				    double minx = Math.min(Pos1.getX(), Pos2.getX());
+				    double maxx = Math.max(Pos1.getX(), Pos2.getX());
+				    double miny = Math.min(Pos1.getY(), Pos2.getY());
+				    double maxy = Math.max(Pos1.getY(), Pos2.getY());
+				    double minz = Math.min(Pos1.getZ(), Pos2.getZ());
+				    double maxz = Math.max(Pos1.getZ(), Pos2.getZ());
+					if(checkArea(ploc,minx,miny,minz,maxx,maxy,maxz) == true){
+				//DO SOMETHING
+						event.setLine(1, "ERROR!");
+						event.setLine(2, "ERROR!");
+						 p.sendMessage(ChatColor.RED + "BuyLand: Placing a sign on its own region will cause errors!");
+						 p.sendMessage(ChatColor.RED + "BuyLand: Please place it outside of the region!");
+							
+					
+				//=================	
+					}else{	
+					//UNRENT CODE GOES HERE!	
+						
+						
+					}
 		        	
 		        	
 		        }
@@ -443,21 +562,7 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 							String nm = p.getName();
 							int numofland = plugin.getCustomConfig().getInt(nm);
 							
-							
-							//int maxofland;
-
-							//if (p.hasPermission("buyland.staff1")){
-							//maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff1");
-							//}else if(p.hasPermission("buyland.staff2")){
-							//maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff2");
-							//}else if(p.hasPermission("buyland.admin")){
-							//maxofland = plugin.getConfig().getInt("buyland.maxamountoflandadmin");
-							
-							//}else{
-							//maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
-							//}
-							
-							
+				
 							
 							int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
 							
@@ -521,19 +626,7 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 						int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
 						
 						
-					//	int maxofland;
-
-					//	if (p.hasPermission("buyland.staff1")){
-					//	maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff1");
-					//	}else if(p.hasPermission("buyland.staff2")){
-					//	maxofland = plugin.getConfig().getInt("buyland.maxamountoflandstaff2");
-					//	}else if(p.hasPermission("buyland.admin")){
-					//	maxofland = plugin.getConfig().getInt("buyland.maxamountoflandadmin");
-						
-					//	}else{
-					//	maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
-					//	}
-						
+	
 						
 
 					if (numofland +1 > maxofland){

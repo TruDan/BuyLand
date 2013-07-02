@@ -383,6 +383,8 @@ public void onEnable() {
 	saveConfig();
 	getWorldGuard();
 	
+	
+	
 
 	new BukkitRunnable()
 	{
