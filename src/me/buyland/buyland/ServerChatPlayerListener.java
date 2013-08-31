@@ -561,10 +561,20 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 							
 							String nm = p.getName();
 							int numofland = plugin.getCustomConfig().getInt(nm);
+
+							//int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
 							
-				
-							
-							int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
+							int loopVal;
+							int end_value = 51;
+							String loop = null;
+
+							for(loopVal = 0; loopVal < end_value; loopVal++){
+								 loop = Integer.toString(loopVal);
+							 if (p.hasPermission("buyland.maxland."+loop)){
+									
+						
+							int maxofland = loopVal;
+
 							
 
 						if (numofland +1 > maxofland){
@@ -588,6 +598,11 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 			   hashbuy.remove(plotname);
 			   
 						}
+						
+						
+						}
+				  	  	}
+				  	  	//END OF MAX
 			   
 
 						}
@@ -623,10 +638,16 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 					    	 }
 						String nm = p.getName();
 						int numofland = plugin.getCustomConfig().getInt(nm);
-						int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
+						//int maxofland = plugin.getConfig().getInt("buyland.maxamountofland");
 						
-						
-	
+						int loopVal;
+						int end_value = 51;
+						String loop = null;
+
+						for(loopVal = 0; loopVal < end_value; loopVal++){
+							 loop = Integer.toString(loopVal);
+						 if (p.hasPermission("buyland.maxland."+loop)){
+						int maxofland = loopVal;
 						
 
 					if (numofland +1 > maxofland){
@@ -641,6 +662,11 @@ Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "sellland " + plotname);
 					        s.update();
 					        Bukkit.dispatchCommand(Bukkit.getPlayer(p.getName()), "buyland " + plotname);
 					}
+					
+					}
+				  	}
+				  	  	//END FOR MAX
+				  	  	
 					        hashbuy.remove(plotname);	
 		 
 				  	  	}

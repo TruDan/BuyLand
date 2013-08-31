@@ -375,15 +375,13 @@ public void onEnable() {
 	config.addDefault("buyland.defaultrentcostpermin", 1.0);
 	config.addDefault("buyland.maxamountofrentland", 1);
 	config.addDefault("buyland.notifyplayerofrenttime", true);
-	config.addDefault("buyland.maxamountofland", 1);
+	//config.addDefault("buyland.maxamountofland", 1);
 	config.addDefault("buyland.offlinelimitindays", 30);
 	config.addDefault("buyland.offlinelimitenable", true);
 	
 	config.options().copyDefaults(true);
 	saveConfig();
 	getWorldGuard();
-	
-	
 	
 
 	new BukkitRunnable()
@@ -2970,9 +2968,18 @@ String convertedforsale = ChatColor.translateAlternateColorCodes('&', this.getla
 	String nm = player.getName();
 	int numofland = this.getCustomConfig().getInt(nm);
 
-	int maxofland = this.getConfig().getInt("buyland.maxamountofland");
+	//int maxofland = this.getConfig().getInt("buyland.maxamountofland");
+	//matthew
+	int loopVal;
+	int end_value = 51;
+	String loop = null;
 
-
+	for(loopVal = 0; loopVal < end_value; loopVal++){
+		 loop = Integer.toString(loopVal);
+	 if (player.hasPermission("buyland.maxland."+loop)){
+			
+	//player.sendMessage("Players Max Land is: " + loop);
+	int maxofland = loopVal;
 	
 
 if (numofland +1 > maxofland){
@@ -3145,6 +3152,11 @@ if(this.getsignConfig().contains("sign." + args[0])){
 
  
 	}
+
+//HERE222
+	 }
+	 }
+//END FOR LOOP MAX LAND
         }
 		}
 		}
@@ -3234,15 +3246,27 @@ if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")
 				         int numofland = this.getCustomConfig().getInt(nm);
 				         
 				         
+				         int loopVal;
+				     	int end_value = 51;
+				     	String loop = null;
+
+				     	for(loopVal = 0; loopVal < end_value; loopVal++){
+				     		 loop = Integer.toString(loopVal);
+				     	 if (player.hasPermission("buyland.maxland."+loop)){
+				     			
+				     	//player.sendMessage("Players Max Land is: " + loop);
+				     	int maxofland = loopVal;
 
 				         
-				         int maxofland = this.getConfig().getInt("buyland.maxamountofland");
+				        // int maxofland = this.getConfig().getInt("buyland.maxamountofland");
 				         
 				         String convertedpricemax1 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.max1"));
 				         String convertedpricemax2 = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.max2"));
 		
 				         player.sendMessage(ChatColor.RED + "BuyLand: " + ChatColor.WHITE + convertedpricemax1 + numofland + convertedpricemax2 + maxofland + ".");
-				         
+				       }
+				     } 
+				     	//END MAX OF LAND
 				 }else{
 				     String convertednotforsale = ChatColor.translateAlternateColorCodes('&', this.getlanguageConfig().getString("buyland.price.dontown"));
 						

@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.7.4
+version: 0.8.0
 main: me.buyland.buyland.main
 description: Buy, Sell and Rent WorldGuard Regions
 authors: [chriztopia]
@@ -79,4 +79,154 @@ permissions:
         default: op
     buyland.admin.list:
         description: List all owned regions for a player.
-        default: op 
+        default: op
+    buyland.maxland.1:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.2:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.3:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.4:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.5:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.6:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.7:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.8:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.9:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.10:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.11:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.12:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.13:
+        description: Max Land Value.
+        default: false 
+    buyland.maxland.14:
+        description: Max Land Value.
+        default: false 
+    buyland.maxland.15:
+        description: Max Land Value.
+        default: false 
+    buyland.maxland.16:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.17:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.18:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.19:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.20:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.21:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.22:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.23:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.24:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.25:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.26:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.27:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.28:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.29:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.30:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.31:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.32:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.33:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.34:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.35:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.36:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.37:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.38:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.39:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.40:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.41:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.42:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.43:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.44:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.45:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.46:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.47:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.48:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.49:
+        description: Max Land Value.
+        default: false
+    buyland.maxland.50:
+        description: Max Land Value.
+        default: false
