@@ -1,8 +1,8 @@
 name: BuyLand
-version: 0.8.0
-main: me.buyland.buyland.main
+version: 0.8.5
+main: ws.kristensen.buyland.BuyLand
 description: Buy, Sell and Rent WorldGuard Regions
-authors: [chriztopia]
+authors: [The_Nut, chriztopia]
 website: http://chriztopia.com
 depend: [WorldGuard]
 softdepend: [Vault]
@@ -19,11 +19,9 @@ commands:
   reloadbuyland:
     description: Reloads Land Config
     usage: Error! Plugin Is Not Working! Command ReloadBuyLand.
-  abl:
-    description: Admin Commands for BuyLand.
-    usage: Error! Plugin Is Not Working! Command ABL.
   adminbuyland:
     description: Admin Commands for BuyLand.
+    aliases: abl
     usage: Error! Plugin Is Not Working! Command AdminBuyLand.
   rentland:
     description: Rents you land.
