@@ -64,7 +64,7 @@ public class BlCommandListenerRentlandReset implements CommandExecutor {
                         plugin.saveRentConfig();
                         
                         //reset the expired region
-                        if (plugin.resetExpiredRentedRegion(world, argRegionName)) {
+                        if (plugin.resetExpiredRentedRegion(sender, world, argRegionName)) {
                             //Notify user it was reset
                             plugin.sendMessageInfo(sender, argRegionName + " has been reset!");
                         } else {

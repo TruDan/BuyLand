@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,6 +44,7 @@ import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.EmptyClipboardException;
 import com.sk89q.worldedit.FilenameException;
 import com.sk89q.worldedit.LocalSession;
+import com.sk89q.worldedit.LocalWorld;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.WorldEdit;
@@ -57,6 +59,9 @@ import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.DefaultFlag;
+import com.sk89q.worldguard.protection.flags.Flag;
+import com.sk89q.worldguard.protection.flags.InvalidFlagFormat;
+import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.flags.StateFlag.State;
 
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -368,7 +373,6 @@ public class BuyLand extends JavaPlugin {
         
         return this.getConfig();
     }
-    
     public void reloadPluginConfig() {
         final FileConfiguration config = this.getConfig();
         config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
@@ -391,6 +395,10 @@ public class BuyLand extends JavaPlugin {
         //config.addDefault("buyland.maxamountofland", 1);
         config.addDefault("buyland.offlinelimitindays", 30);
         config.addDefault("buyland.offlinelimitenable", true);
+        //config.addDefault("buyland.worldGuardFlags.onRentExpire", "");
+        //config.addDefault("buyland.worldGuardFlags.onRentBegin", "");
+        //config.addDefault("buyland.worldGuardFlags.onBuy", "");
+        //config.addDefault("buyland.worldGuardFlags.onSale", "");
 
         config.options().copyDefaults(true);
     }
@@ -558,7 +566,7 @@ public class BuyLand extends JavaPlugin {
                         World world = Bukkit.getWorld(worldName);
 
                         //Reset the rental region if needed
-                        if (resetExpiredRentedRegion(world, regionName) == true) {
+                        if (resetExpiredRentedRegion(null, world, regionName) == true) {
                             //Send message to everyone
                             if (config.getBoolean("buyland.rentbroadcastmsg") == true) {
                                 broadcastMessageInfo(regionName + " is now rentable!");
@@ -698,7 +706,7 @@ public class BuyLand extends JavaPlugin {
      * @param world World where the region exists
      * @param argRegionName String of the region to be reset
      */
-    protected boolean resetExpiredRentedRegion(World world, String argRegionName) {
+    protected boolean resetExpiredRentedRegion(CommandSender sender, World world, String argRegionName) {
         //get the properly cased region name for use on the sign, etc
         argRegionName = argRegionName.toLowerCase();
 
@@ -806,6 +814,11 @@ public class BuyLand extends JavaPlugin {
                         }
                     }
 
+                    ConfigurationSection cs = getConfig().getConfigurationSection("buyland.worldGuardFlags.onRentExpire");
+                    if (cs != null) {
+                        //setWorldGuardFlag(sender, protectedRegion, cs);
+                    }
+                    
                     //Save the region
                     try {
                         regionManager.save();
@@ -840,6 +853,7 @@ public class BuyLand extends JavaPlugin {
 
         //Get the player Name
         String playerName = player.getName();
+        String playerNameLowerCase = playerName.toLowerCase();
 
         RegionManager regionManager = getWorldGuard().getRegionManager(world);
         //Get the protected region
@@ -875,7 +889,7 @@ public class BuyLand extends JavaPlugin {
                 long start = System.currentTimeMillis();
 
                 //see if the region needs to be reset because the rent time has expired
-                if (resetExpiredRentedRegion(world, argRegionName)) {
+                if (resetExpiredRentedRegion(player, world, argRegionName)) {
                     //possibly notify user/everyone that the land is rentable
                 }
                 
@@ -969,7 +983,7 @@ public class BuyLand extends JavaPlugin {
                             getRentConfig().set("rent." + argRegionName +".rentable", false);
                             
                             //Update the number of regions rented by the player
-                            getrentdbConfig().set(playerName, getrentdbConfig().getInt(playerName) + 1);
+                            getrentdbConfig().set(playerNameLowerCase, getrentdbConfig().getInt(playerName) + 1);
                             saverentdbConfig();
                             
                             //Update owner of rented domain 
@@ -1036,7 +1050,25 @@ public class BuyLand extends JavaPlugin {
         //return that the region was not rented
         return false;
     }
-    
+
+    /**
+     * Indicates if the passed in protectedRegion is a rent region
+     *  
+     * @param protectedRegion ProtectedRegion that is in question
+     * @return boolean true if it is a rentable region, false if it is a buyable region
+     */
+    protected boolean isRentRegion(ProtectedRegion protectedRegion) {
+        String argRegionName = protectedRegion.getId();
+        if(getRentConfig().contains("rent." + argRegionName.toLowerCase() + ".rentable")) {
+            //This is a rentable region
+            if (!protectedRegion.getFlag(DefaultFlag.BUYABLE)) {
+                //This rentable region is not buyable
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * This will sell the region and place it back available for purchase.
      * This will notify the owner that the region was sold and what their new balance is.
@@ -1295,7 +1327,7 @@ public class BuyLand extends JavaPlugin {
                             }
     
                             //Record the new number of regions the player owns
-                            getCustomConfig().set(playerName, currentNumberPlayerOwnedRegions + 1);
+                            getCustomConfig().set(playerName.toLowerCase(), currentNumberPlayerOwnedRegions + 1);
                             saveCustomConfig();
     
                             //Set the owner of the land
@@ -1410,6 +1442,279 @@ public class BuyLand extends JavaPlugin {
         return (WorldGuardPlugin)plugin;
     } 
 
+    /**
+     * This is to remove flags for a given region
+     * 
+     * @param protectedRegion ProtectedRegion from which to remove the flags
+     * @param argFlagNames String[] list of flags to remove
+     * @return boolean that indicates if flags were removed
+     */
+    public boolean setWorldGuardFlag(CommandSender sender, ProtectedRegion protectedRegion, ConfigurationSection csFlags) {
+        //TODO: Ticket #41 - implement code to remove the passed in flags from a given region.
+        //      call this when the region is sold, bought, rented, re-rented
+        boolean flagsWereAdjusted = false;
+        
+        //com.sk89q.worldguard.protection.flags.DefaultFlag
+        for (String flagName : csFlags.getKeys(true)) {
+            //get the value of the flag name from the configuration section
+            String flagValue = csFlags.getString(flagName).trim();
+            
+            //Null out the value if there is no characters to it
+            if (flagValue.trim() == "") {
+                flagValue = null;
+            }
+            
+            //Handle the State flags
+            switch (flagName.toLowerCase()) {
+                case "allowed-cmds": protectedRegion.setFlags(worldEditFlagList(sender, DefaultFlag.ALLOWED_CMDS, flagValue)); flagsWereAdjusted = true; break;  //List Flag
+                case "blocked-cmds": protectedRegion.setFlags(worldEditFlagList(sender, DefaultFlag.BLOCKED_CMDS, flagValue)); flagsWereAdjusted = true; break;  //List Flag 
+                case "build": protectedRegion.setFlag(DefaultFlag.BUILD, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+//Don't allow   case "buyable": protectedRegion.setFlag(DefaultFlag.BUYABLE, worldEditFlagBoolean(flagValue)); flagsWereAdjusted = true; break; 
+                case "chest-access": protectedRegion.setFlag(DefaultFlag.CHEST_ACCESS, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "construct": protectedRegion.setFlags(worldEditFlagList(sender, DefaultFlag.CONSTRUCT, flagValue)); flagsWereAdjusted = true; break; //RegionGroupFlag
+                case "creeper-explosion": protectedRegion.setFlag(DefaultFlag.CREEPER_EXPLOSION, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "deny-spawn": protectedRegion.setFlags(worldEditFlagList(sender, DefaultFlag.DENY_SPAWN, flagValue)); flagsWereAdjusted = true; break;  //List Flag
+                case "enderdragon-block-damage": protectedRegion.setFlag(DefaultFlag.ENDERDRAGON_BLOCK_DAMAGE, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "enderman-grief": protectedRegion.setFlag(DefaultFlag.ENDER_BUILD, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "enderpearl": protectedRegion.setFlag(DefaultFlag.ENDERPEARL, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "entity-item-frame-destroy": protectedRegion.setFlag(DefaultFlag.ENTITY_ITEM_FRAME_DESTROY, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "entity-painting-destroy": protectedRegion.setFlag(DefaultFlag.ENTITY_PAINTING_DESTROY, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "entry": protectedRegion.setFlag(DefaultFlag.ENTRY, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                //case "entry group": break; //RegionGroupFlag
+                case "exit": protectedRegion.setFlag(DefaultFlag.EXIT, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                //case "exit group": break; //RegionGroupFlag
+                case "farewell": protectedRegion.setFlag(DefaultFlag.FAREWELL_MESSAGE, flagValue); flagsWereAdjusted = true; break; 
+                case "feed-amount": protectedRegion.setFlag(DefaultFlag.FEED_AMOUNT, worldEditFlagInteger(flagValue)); flagsWereAdjusted = true; break; 
+                case "feed-delay": protectedRegion.setFlag(DefaultFlag.FEED_DELAY, worldEditFlagInteger(flagValue)); flagsWereAdjusted = true; break; 
+                case "feed-max-hunger": protectedRegion.setFlag(DefaultFlag.MAX_FOOD, worldEditFlagInteger(flagValue)); flagsWereAdjusted = true; break; 
+                case "feed-min-hunger": protectedRegion.setFlag(DefaultFlag.MIN_FOOD, worldEditFlagInteger(flagValue)); flagsWereAdjusted = true; break; 
+                case "fire-spread": protectedRegion.setFlag(DefaultFlag.FIRE_SPREAD, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "game-mode": protectedRegion.setFlag(DefaultFlag.GAME_MODE, worldEditFlagGameMode(flagValue)); flagsWereAdjusted = true; break; 
+                case "ghast-fireball": protectedRegion.setFlag(DefaultFlag.GHAST_FIREBALL, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "grass-growth": protectedRegion.setFlag(DefaultFlag.GRASS_SPREAD, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "greeting": protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, flagValue); flagsWereAdjusted = true; break; 
+                case "heal-amount": protectedRegion.setFlag(DefaultFlag.HEAL_AMOUNT, worldEditFlagInteger(flagValue)); flagsWereAdjusted = true; break; 
+                case "heal-delay": protectedRegion.setFlag(DefaultFlag.HEAL_DELAY, worldEditFlagInteger(flagValue)); flagsWereAdjusted = true; break; 
+                case "heal-max-health": protectedRegion.setFlag(DefaultFlag.MAX_HEAL, worldEditFlagDouble(flagValue)); flagsWereAdjusted = true; break; 
+                case "heal-min-health": protectedRegion.setFlag(DefaultFlag.MIN_HEAL, worldEditFlagDouble(flagValue)); flagsWereAdjusted = true; break; 
+                case "ice-form": protectedRegion.setFlag(DefaultFlag.ICE_FORM, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "ice-melt": protectedRegion.setFlag(DefaultFlag.ICE_MELT, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "invincible": protectedRegion.setFlag(DefaultFlag.INVINCIBILITY, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "lava-fire": protectedRegion.setFlag(DefaultFlag.LAVA_FIRE, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "lava-flow": protectedRegion.setFlag(DefaultFlag.LAVA_FLOW, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "leaf-decay": protectedRegion.setFlag(DefaultFlag.LEAF_DECAY, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "lighter": protectedRegion.setFlag(DefaultFlag.LIGHTER, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "lightning": protectedRegion.setFlag(DefaultFlag.LIGHTNING, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "mob-damage": protectedRegion.setFlag(DefaultFlag.MOB_DAMAGE, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "mob-spawning": protectedRegion.setFlag(DefaultFlag.MOB_SPAWNING, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "notify-enter": protectedRegion.setFlag(DefaultFlag.NOTIFY_ENTER, worldEditFlagBoolean(flagValue)); flagsWereAdjusted = true; break; 
+                case "notify-leave": protectedRegion.setFlag(DefaultFlag.NOTIFY_LEAVE, worldEditFlagBoolean(flagValue)); flagsWereAdjusted = true; break; 
+                case "passthrough": protectedRegion.setFlag(DefaultFlag.PASSTHROUGH, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "pistons": protectedRegion.setFlag(DefaultFlag.PISTONS, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "potion-splash": protectedRegion.setFlag(DefaultFlag.POTION_SPLASH, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+//Don't allow   case "price": protectedRegion.setFlag(DefaultFlag.PRICE, worldEditFlagDouble(flagValue)); flagsWereAdjusted = true; break; 
+                case "pvp": protectedRegion.setFlag(DefaultFlag.PVP, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "receive-chat": protectedRegion.setFlag(DefaultFlag.RECEIVE_CHAT, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break; 
+                case "send-chat": protectedRegion.setFlag(DefaultFlag.SEND_CHAT, worldEditFlagState(flagValue)); flagsWereAdjusted = true;  break; 
+                case "sleep": protectedRegion.setFlag(DefaultFlag.SLEEP, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "snow-fall": protectedRegion.setFlag(DefaultFlag.SNOW_FALL, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "snow-melt": protectedRegion.setFlag(DefaultFlag.SNOW_MELT, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "spawn": protectedRegion.setFlag(DefaultFlag.SPAWN_LOC, worldEditFlagLocation(flagValue)); flagsWereAdjusted = true; break;
+                case "teleport": protectedRegion.setFlag(DefaultFlag.TELE_LOC, worldEditFlagLocation(flagValue)); flagsWereAdjusted = true; break;
+                case "tnt": protectedRegion.setFlag(DefaultFlag.TNT, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "use": protectedRegion.setFlag(DefaultFlag.USE, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "vehicle-destroy": protectedRegion.setFlag(DefaultFlag.DESTROY_VEHICLE, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "vehicle-place": protectedRegion.setFlag(DefaultFlag.PLACE_VEHICLE, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "water-flow": protectedRegion.setFlag(DefaultFlag.WATER_FLOW, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+
+                //Undocumented flags on http://wiki.sk89q.com/wiki/WorldGuard/Regions/Flags
+                case "enable-shop": protectedRegion.setFlag(DefaultFlag.ENABLE_SHOP, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "exp-drops": protectedRegion.setFlag(DefaultFlag.EXP_DROPS, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "item-drop": protectedRegion.setFlag(DefaultFlag.ITEM_DROP, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "mushrooms": protectedRegion.setFlag(DefaultFlag.MUSHROOMS, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "mycelium-spread": protectedRegion.setFlag(DefaultFlag.MYCELIUM_SPREAD, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "other-explosion": protectedRegion.setFlag(DefaultFlag.OTHER_EXPLOSION, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+                case "vine-growth": protectedRegion.setFlag(DefaultFlag.VINE_GROWTH, worldEditFlagState(flagValue)); flagsWereAdjusted = true; break;
+            } 
+        }
+                
+        //return whether or not a flag was adjusted.
+        return flagsWereAdjusted;
+    }
+    /**
+     * Returns the Generic parsed flag
+     * 
+     * @param sender CommandSender is the person who made the call.
+     * @param flag Flag<?> that is being parsed
+     * @param flagValue String representing the flag we are trying to set
+     * @return Object representing the parsed flag setting
+     */
+    private HashMap<Flag<?>, Object> worldEditFlagList(CommandSender sender, Flag<?> flag, String flagValue) {
+        HashMap<Flag<?>, Object> returnStuff = new HashMap<Flag<?>, Object>();
+        
+        //if we have an empty string, then return null
+        if (flagValue.trim() == "" || flagValue == null) {
+            returnStuff.put(flag, null);
+        } else {
+            //loop through the array and try to set each part.
+            String[] flagValues = flagValue.split(",");
+            for (int i = 0; i < flagValues.length; i++) {
+                try {
+                    returnStuff.put(flag, flag.parseInput(getWorldGuard(), sender, flagValue));
+                } catch (InvalidFlagFormat e) {
+                    //do nothing with this value
+                }
+            }
+        }
+        
+        //Make sure it is not empty
+        if (returnStuff.size() == 0) {
+            returnStuff.put(flag, null);
+        }
+        
+        //Return the HashMap
+        return returnStuff;
+    }
+    /**
+     * Returns a StateFlag.State if passed in value is allow, allowed, deny, denied.
+     * 
+     * @param flagValue String representing a StateFlag.State flag
+     * @return StateFlag.State value or null
+     */
+    private StateFlag.State worldEditFlagState(String flagValue) {
+        Boolean result = worldEditFlagBoolean(flagValue);
+        if (result == null) {
+            return null;
+        } else if (result == true) {
+            return StateFlag.State.ALLOW;
+        } else if (result == false) {
+            return StateFlag.State.DENY;
+        }
+        
+        //we do not have a valid state;
+        return null;
+    }
+    /**
+     * Returns an Integer if convertable or a null if empty string or if value is not convertable to Integer
+     * 
+     * @param flagValue String representing an integer or empty string
+     * @return Integer value or null
+     */
+    private Integer worldEditFlagInteger(String flagValue) {
+        //if we have an empty string, then return null
+        if (flagValue.trim() == "" || flagValue == null) {
+            return null;
+        } else {
+            //try to return a converted value as an integer
+            try {
+                return Integer.valueOf(flagValue);    
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+    /**
+     * Returns a Double if convertable or a null if empty string or if value is not convertable to Double
+     * 
+     * @param flagValue String representing a double or empty string
+     * @return Double value or null
+     */
+    private Double worldEditFlagDouble(String flagValue) {
+        //if we have an empty string, then return null
+        if (flagValue.trim() == "" || flagValue == null) {
+            return null;
+        } else {
+            //try to return a converted value as a double
+            try {
+                return Double.valueOf(flagValue);    
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+    /**
+     * Returns a Boolean if convertable or a null if empty string or if value is not convertable to Boolean
+     * 
+     * @param flagValue String representing a boolean or empty string
+     * @return Boolean value or null
+     */
+    private Boolean worldEditFlagBoolean(String flagValue) {
+        if (flagValue.equalsIgnoreCase("allow") || 
+            flagValue.equalsIgnoreCase("allowed") ||
+            flagValue.equalsIgnoreCase("yes") ||
+            flagValue.equalsIgnoreCase("true") ||
+            flagValue.equalsIgnoreCase("on")
+           ) {
+            return true; 
+        } else if (flagValue.equalsIgnoreCase("deny") || 
+                   flagValue.equalsIgnoreCase("denied") || 
+                   flagValue.equalsIgnoreCase("no") || 
+                   flagValue.equalsIgnoreCase("false") || 
+                   flagValue.equalsIgnoreCase("off")
+                  ) { 
+            return false;
+        } else {
+            //we do not have a valid value
+            return null;
+        }
+    }
+    /**
+     * Returns a bukkit game mode of Adventure, Creative, or Survival or null if not matched
+     * 
+     * @param flagValue String representing a bukkit game mode
+     * @return org.bukkit.GameMode value or null
+     */
+    private org.bukkit.GameMode worldEditFlagGameMode(String flagValue) {
+        //if we have an empty string, then return null
+        if (flagValue.trim() == "" || flagValue == null) {
+            return null;
+        } else {
+            //try to return a converted value as an integer
+            try {
+                //Convert it into a state flag if possible
+                if (flagValue.equalsIgnoreCase("adventure")) {
+                    return org.bukkit.GameMode.ADVENTURE; 
+                } else if (flagValue.equalsIgnoreCase("creative")) { 
+                    return org.bukkit.GameMode.CREATIVE;
+                } else if (flagValue.equalsIgnoreCase("survival")) { 
+                    return org.bukkit.GameMode.SURVIVAL;
+                } else {
+                    return null;
+                }
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+    /**
+     * Returns a LocationFlag representing a location within the world.
+     * expects flagValue to be like worldName,x,y,Z
+     * 
+     * @param flagValue String representing a location
+     * @return LocationFlag value or null
+     */
+    private com.sk89q.worldedit.Location worldEditFlagLocation(String flagValue) {
+        //if we have an empty string, then return null
+        if (flagValue.trim() == "" || flagValue == null) {
+            return null;
+        } else {
+            //try to return a converted value as an integer
+            try {
+                String[] points = flagValue.split(",");
+                if (points.length == 4) {
+                    Vector vector = new Vector(Integer.valueOf(points[1]), Integer.valueOf(points[2]), Integer.valueOf(points[3]));
+                    LocalWorld world = (LocalWorld) Bukkit.getWorld(points[0]);
+                    com.sk89q.worldedit.Location location = new com.sk89q.worldedit.Location(world, vector); 
+                    return location;
+                } else {
+                    return null;
+                }
+            } catch (Exception e) {
+                return null;
+            }
+        }
+    }
+    
     /**
      * Get WorldEdit Selection of the player
      * 

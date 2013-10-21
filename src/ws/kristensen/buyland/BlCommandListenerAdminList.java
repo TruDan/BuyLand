@@ -65,7 +65,7 @@ public class BlCommandListenerAdminList implements CommandExecutor {
             
             if (showList) {
                 //State who the list is for
-                plugin.sendMessageInfo(sender, argPlayerName + " owns regions: ");
+                plugin.sendMessageInfo(sender, argPlayerName + " owns the following regions: ");
                 //Loop through all the worlds
                 for (World world : Bukkit.getWorlds()) {
                     //get the list of regions for the selected world

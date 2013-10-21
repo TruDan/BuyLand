@@ -4,6 +4,7 @@ import java.util.HashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -31,13 +32,36 @@ public class BlEventListenerPlayerInteract extends JavaPlugin implements Listene
 		plugin = instance;
 	}
 	
-	@EventHandler(priority = EventPriority.HIGHEST)
+	/**
+	 * Make sure that the clickedBlock is never null.
+	 * If clickedBlock is null, get what the player is looking up to lookingRange blocks away, and get that block.
+	 * 
+	 * @param player Player that clicked
+	 * @param clickedBlock Block to try and safely get
+	 * @param lookingRange int maximum range to try and get a block
+	 * @return Block
+	 */
+	private Block getSafeClickedBlock(Player player, Block clickedBlock, int lookingRange) {
+	    //see if there is any block that was clicked on
+	    if (clickedBlock == null) {
+	        //get what the player was looking at up to x blocks away
+	        //NOTE: this will return an AIR block if what they were looking at is further away than looking range
+	        return player.getTargetBlock(null,  lookingRange);
+	    } else {
+	        return clickedBlock;
+	    }
+	}
+	
+	@EventHandler(priority = EventPriority.LOWEST) //be the first to see what was clicked on so we can do our thing without stuff being changed
 	public void onSignUse(PlayerInteractEvent event) {
-        if (event.getClickedBlock().getType() == Material.SIGN || event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN) {
+	    //get what was clicked on (directly or indirectly) up to 5 blocks away 
+	    Block clickedBlock = getSafeClickedBlock(event.getPlayer(), event.getClickedBlock(), 5);
+	    
+        if (clickedBlock.getType() == Material.SIGN || clickedBlock.getType() == Material.SIGN_POST || clickedBlock.getType() == Material.WALL_SIGN) {
             //Abort if the item clicked on is not an instance of a sign
-            if(event.getClickedBlock().getState() instanceof Sign) {
+            if(clickedBlock.getState() instanceof Sign) {
                 //Save the sign object for use
-                Sign sign = (Sign) event.getClickedBlock().getState();
+                Sign sign = (Sign) clickedBlock.getState();
     
                 //See if this is a buyland sign
                 if (sign.getLine(0).contains("[BuyLand]") || sign.getLine(0).equalsIgnoreCase("[BuyLand]")) {
