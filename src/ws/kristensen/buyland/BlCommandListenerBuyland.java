@@ -44,43 +44,41 @@ public class BlCommandListenerBuyland implements CommandExecutor {
             Player player = (Player)sender;
 
             //See if the player has permission to do the command
-            if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.all")) {
-                if (args.length > 0) {
-                    if (args[0].equalsIgnoreCase("list"))         { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandList(plugin).onCommand(sender, command, label, args); }
-                    if (args[0].equalsIgnoreCase("tp"))           { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandTeleport(plugin).onCommand(sender, command, label, args); }
-                    if (args[0].equalsIgnoreCase("addmember"))    { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandMemberAdd(plugin).onCommand(sender, command, label, args); }
-                    if (args[0].equalsIgnoreCase("removemember")) { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandMemberRemove(plugin).onCommand(sender, command, label, args); }
-                    else                                          {                                            return new BlCommandListenerBuylandBuy(plugin).onCommand(sender, command, label, args); }
-                } else {
-                    plugin.sendMessageInfo(sender, ChatColor.YELLOW + "Buyland Commands", false);
-    
-                    if (player.hasPermission("buyland.list") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/buyland list - Lists all owned regions.", false);
-                    }
-    
-                    if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/priceland [RegionName] - Prices a region that is buyable.", false);
-                    }
-                    if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/buyland [RegionName] - Buy a region.", false);
-                    }
-                    if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/sellland [RegionName] - Sell a region.", false);
-                    }
-    
-                    if (player.hasPermission("buyland.buy.addmember") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/buyland addMember [RegionName] [PlayerName] - Add Member to region.", false);
-                    }
-                    if (player.hasPermission("buyland.buy.removemember") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/buyland removeMember [RegionName] [PlayerName] - Remove Member from region.", false);
-                    }
-   
-                    if (player.hasPermission("buyland.tp") || player.hasPermission("buyland.all")) {
-                        plugin.sendMessageInfo(sender, "/buyland tp [RegionName] - Teleport you to region.", false);
-                    }
-                }
+            if (args.length > 0) {
+                if (args[0].equalsIgnoreCase("list"))         { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandList(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("tp"))           { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandTeleport(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("addmember"))    { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandMemberAdd(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("removemember")) { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandMemberRemove(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("top"))          { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandTop(plugin).onCommand(sender, command, label, args); }
+                else                                          {                                            return new BlCommandListenerBuylandBuy(plugin).onCommand(sender, command, label, args); }
             } else {
-                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.permission")));
+                plugin.sendMessageInfo(sender, ChatColor.YELLOW + "Buyland Commands", false);
+
+                if (player.hasPermission("buyland.list") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/buyland list - Lists all owned regions.", false);
+                }
+
+                if (player.hasPermission("buyland.price") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/priceland [RegionName] - Prices a region that is buyable.", false);
+                }
+
+                if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/buyland [RegionName] - Buy a region.", false);
+                }
+                if (player.hasPermission("buyland.buy.addmember") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/buyland addMember [RegionName] [PlayerName] - Add Member to region.", false);
+                }
+                if (player.hasPermission("buyland.buy.removemember") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/buyland removeMember [RegionName] [PlayerName] - Remove Member from region.", false);
+                }
+
+                if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/sellland [RegionName] - Sell a region.", false);
+                }
+   
+                if (player.hasPermission("buyland.tp") || player.hasPermission("buyland.all")) {
+                    plugin.sendMessageInfo(sender, "/buyland tp [RegionName] - Teleport you to region.", false);
+                }
             }
             return true;
         } else {

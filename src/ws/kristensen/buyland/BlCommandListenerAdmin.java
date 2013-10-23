@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
  *      /adminbuyland list [Player Name] [Region Name]<br/>
  *      /adminbuyland lwcremove [Region Name]<br/>
  *      /adminbuyland reset [Region Name]<br/>
+ *      /adminbuyland flags<br/>
  * <hr/>
  * This will redirect to the class that handles the specific sub-command.<br/>
  * <br/> 
@@ -50,6 +51,7 @@ public class BlCommandListenerAdmin implements CommandExecutor {
                 if (arg.equalsIgnoreCase("price"))     { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminPrice(plugin).onCommand(sender, command, label, args); }
                 if (arg.equalsIgnoreCase("reset"))     { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminReset(plugin).onCommand(sender, command, label, args); }
                 if (arg.equalsIgnoreCase("save"))      { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminSave(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("flags"))     { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminFlags(plugin).onCommand(sender, command, label, args); }
                 //See BlCommandListenerRentland for /rentland save [region_name] command
                 //See BlCommandListenerRentland for /rentland [region_name] reset command
             } else {

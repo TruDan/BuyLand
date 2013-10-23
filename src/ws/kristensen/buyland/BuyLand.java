@@ -74,7 +74,7 @@ Commands
     -- /buyland [regionname] - Buys the Region
     -- /sellland [regionname] - Sells the Region
     -- /priceland [regionname] - Prices the Region Works for both rentland and buyland
-    -- /rentland [regionname] [Time] [Sec/Min/Hour/Day] - Rents a region
+    -- /rentland [regionname] [Time] [Sec/Min/Hr/Day/Wk] - Rents a region
     -- /rentland [regionname] cost - Shows the cost of a region.
     -- /buyland addmember [regionname] [playername] - Add a member to a region.
     -- /buyland removemember [regionname] [playername] - Remove a member from a region.
@@ -192,7 +192,9 @@ public class BuyLand extends JavaPlugin {
         //Make sure the minimum settings in the file are there with these defaults
         customConfig.options().header("BuyLand DB File. Used for keeping track of how many plots a user has.");
 
-        customConfig.addDefault("user", 0);
+        customConfig.addDefault("user.own", 0);
+        customConfig.addDefault("user.earned", 0.00);
+        customConfig.addDefault("user.spent", 0.00);
     }
     public void saveCustomConfig() {
         if (customConfig == null || customConfigFile == null) {
@@ -352,7 +354,9 @@ public class BuyLand extends JavaPlugin {
         //Make sure the minimum settings in the file are there with these defaults
         rentdbConfig.options().header("BuyLand Rent DB File. Used for keeping track of how many rentable plots a user has.");
         
-        rentdbConfig.addDefault("user", 0);
+        rentdbConfig.addDefault("user.renting", 0);
+        rentdbConfig.addDefault("user.earned", 0.00);
+        rentdbConfig.addDefault("user.spent", 0.00);
     }
     public void saverentdbConfig() {
         if (rentdbConfig == null || rentdbConfigFile == null) {
@@ -377,37 +381,83 @@ public class BuyLand extends JavaPlugin {
         final FileConfiguration config = this.getConfig();
         config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
 
-        config.addDefault("buyland.defaultprice", 100.00);
-        config.addDefault("buyland.percentsellback", 1.00);
-        config.addDefault("buyland.resetlandonsale", true);
-        config.addDefault("buyland.landpriority", 1);
-        config.addDefault("buyland.usepriceperblock", false);
-        config.addDefault("buyland.defaultpriceperblock", 1.00);
-        config.addDefault("buyland.rentbroadcastmsg", true);
-        config.addDefault("buyland.landgreeting", true);
-        config.addDefault("buyland.landgreetingerasemsg", false);
-        config.addDefault("buyland.breaksignonbuy", false);
-        config.addDefault("buyland.denyentrytoland", false);
-        config.addDefault("buyland.removelwcprotection", false);
-        config.addDefault("buyland.defaultrentcostpermin", 1.0);
-        config.addDefault("buyland.maxamountofrentland", 1);
-        config.addDefault("buyland.notifyplayerofrenttime", true);
+        //Unused config
         //config.addDefault("buyland.maxamountofland", 1);
-        config.addDefault("buyland.offlinelimitindays", 30);
-        config.addDefault("buyland.offlinelimitenable", true);
-        //config.addDefault("buyland.worldGuardFlags.onRentExpire", "");
-        //config.addDefault("buyland.worldGuardFlags.onRentBegin", "");
-        //config.addDefault("buyland.worldGuardFlags.onBuy", "");
-        //config.addDefault("buyland.worldGuardFlags.onSale", "");
+        //config.addDefault("buyland.breaksignonbuy", false);
 
-        config.options().copyDefaults(true);
+        //general config
+        config.addDefault("general.regionPriority", 1);
+        config.addDefault("general.configVersion", 2);
+        
+        //buyland stuff
+        config.addDefault("buyland.onCreate.denyEntry", false);
+        config.addDefault("buyland.onCreate.greetMessage.display", true);
+        config.addDefault("buyland.onCreate.greetMessage.erase", false); //only available if display = false
+        config.addDefault("buyland.onCreate.saveSchematic", true);
+        config.addDefault("buyland.onCreate.removelwcprotection", false);
+        config.addDefault("buyland.onCreate.worldGuardFlags.default", "");
+        config.addDefault("buyland.onBuyFromBank.breakSign", false);
+        config.addDefault("buyland.onBuyFromBank.denyEntry", false);
+        config.addDefault("buyland.onBuyFromBank.greetMessage.display", true);
+        config.addDefault("buyland.onBuyFromBank.greetMessage.erase", false); //only available if display = false
+        config.addDefault("buyland.onBuyFromBank.placeSchematic", false);
+        config.addDefault("buyland.onBuyFromBank.saveSchematic", true);
+        config.addDefault("buyland.onBuyFromBank.price.default", 100.00);
+        config.addDefault("buyland.onBuyFromBank.price.perBlock", 1.00);
+        config.addDefault("buyland.onBuyFromBank.price.usePerBlock", false);
+        config.addDefault("buyland.onBuyFromBank.removelwcprotection", false);
+        config.addDefault("buyland.onBuyFromBank.worldGuardFlags.default", "");
+        config.addDefault("buyland.onSaleToBank.denyEntry", false);
+        config.addDefault("buyland.onSaleToBank.greetMessage.display", true);
+        config.addDefault("buyland.onSaleToBank.greetMessage.erase", false); //only available if display = false
+        config.addDefault("buyland.onSaleToBank.placeSchematic", true);
+        config.addDefault("buyland.onSaleToBank.saveSchematic", false);
+        config.addDefault("buyland.onSaleToBank.price.percent", 1.00);
+        config.addDefault("buyland.onSaleToBank.removelwcprotection", false);
+        config.addDefault("buyland.onSaleToBank.worldGuardFlags.default", "");
+        config.addDefault("buyland.offlineLimit.days", 30);
+        config.addDefault("buyland.offlineLimit.enable", true);
+        config.addDefault("buyland.offlineLimit.checkMembers", false); //default to false so it acts the same way as before.
+        
+        //rentland stuff
+        config.addDefault("rentland.onPlayerJoin.notifyOfTimeLeft", true);
+        config.addDefault("rentland.onCreate.denyEntry", false);
+        config.addDefault("rentland.onCreate.greetMessage.display", true);
+        config.addDefault("rentland.onCreate.greetMessage.erase", false); //only available if display = false
+        config.addDefault("rentland.onCreate.saveSchematic", true);
+        config.addDefault("rentland.onCreate.removelwcprotection", false);
+        config.addDefault("rentland.onCreate.worldGuardFlags.default", "");
+        config.addDefault("rentland.onCreate.price.perMinDefault", 1.0);
+        config.addDefault("rentland.onRentBegin.denyEntry", false);
+        config.addDefault("rentland.onRentBegin.greetMessage.display", true);
+        config.addDefault("rentland.onRentBegin.greetMessage.erase", false); //only available if display = false
+        config.addDefault("rentland.onRentBegin.removelwcprotection", false);
+        config.addDefault("rentland.onRentBegin.placeSchematic", false);
+        config.addDefault("rentland.onRentBegin.saveSchematic", true);
+        config.addDefault("rentland.onRentBegin.worldGuardFlags.default", "");
+        config.addDefault("rentland.onRentExtend.denyEntry", false);
+        config.addDefault("rentland.onRentExtend.removelwcprotection", false);
+        config.addDefault("rentland.onRentExtend.placeSchematic", false);
+        config.addDefault("rentland.onRentExtend.saveSchematic", false);
+        config.addDefault("rentland.onRentExtend.worldGuardFlags.default", "");
+        config.addDefault("rentland.onRentExpire.denyEntry", false);
+        config.addDefault("rentland.onRentExpire.greetMessage.display", true);
+        config.addDefault("rentland.onRentExpire.greetMessage.erase", false); //only available if display = false
+        config.addDefault("rentland.onRentExpire.removelwcprotection", false);
+        config.addDefault("rentland.onRentExpire.placeSchematic", true);
+        config.addDefault("rentland.onRentExpire.saveSchematic", false);
+        config.addDefault("rentland.onRentExpire.broadcast.available", true);
+        config.addDefault("rentland.onRentExpire.worldGuardFlags.default", "");
+        config.addDefault("rentland.onRentBegin.maxRegions", 1);
+        
+        config.options().copyDefaults(true);        
     }
     
     @Override
     public void onDisable() {
         saveRentConfig();
-        PluginDescriptionFile pdffile = this.getDescription();
-        this.logger.info(pdffile.getName() + " is now disabled.");
+        //PluginDescriptionFile pdffile = this.getDescription();
+        //this.logger.info(pdffile.getName() + " is now disabled.");
     }
 
     @Override
@@ -437,7 +487,7 @@ public class BuyLand extends JavaPlugin {
                                                             //                /rentland removemember [regionname] [playername] - Remove a member from a region.
                                                             //                /rentland [regionname] cost                      - Shows the cost of a region.
                                                             //                /rentland [regionname] time                      - Displays time left for a rented region.
-                                                            //                /rentland [regionname] x [Sec/Min/Hour/Day]      - Rents a region.
+                                                            //                /rentland [regionname] x [Sec/Min/Hr/Day/Wk]     - Rents a region.
         getCommand("priceland").setExecutor(clPriceland);
         this.getServer().getPluginManager().registerEvents(elPlayerInteract, this);  //Handle sign left and right clicks
         this.getServer().getPluginManager().registerEvents(elPlayerJoin, this);      //Handle player joins
@@ -476,7 +526,7 @@ public class BuyLand extends JavaPlugin {
     	new BukkitRunnable() {
     	    public void run() {
     	        //See if we want to limit offline time
-    	        if(config.getBoolean("buyland.offlinelimitenable") == true) {
+    	        if(config.getBoolean("buyland.offlineLimit.enable") == true) {
     	            //Loop through each world
     	            for (World world: Bukkit.getWorlds()) {
     	                //make sure world is not null
@@ -507,23 +557,39 @@ public class BuyLand extends JavaPlugin {
     	                                //Calculate the time away from the server
         	                            long timeAwayFromServer = timeCurrent - timePlayerLastSeen;
         	                            //Get the maximum amount of time logged off before the region is sold
-        	                            long maximumAllowedTimeAwayFromServer = getConfig().getLong("buyland.offlinelimitindays") * (24 * 60 * 60 * 1000L);
+        	                            long maximumAllowedTimeAwayFromServer = getConfig().getLong("buyland.offlineLimit.days") * (24 * 60 * 60 * 1000L);
         	                            //See if they have been away long enough
         	                            if (timeAwayFromServer > maximumAllowedTimeAwayFromServer) {
         	                                //See if this is a rental
-        	                                if (getRentConfig().contains("rent." + protectedRegion.getId() + ".rentable")) {
+        	                                if (isRentRegion(protectedRegion)) {
                                                 //It is rentable, do nothing here
                                             } else {
-                                                //Sell region
-                                                for (Player possibleAdmin : Bukkit.getOnlinePlayers()) {
-                                                    if(possibleAdmin.isOp() || possibleAdmin.hasPermission("buyland.admin")) {
-                                                        //use the first admin or op found to sell the region.
-                                                        //Notify admin or op found
-                                                        sendMessageInfo(possibleAdmin, "Owner: " + ownerNames + " Region: " + protectedRegion.getId());
-                                                        //Sell the region
-                                                        Bukkit.dispatchCommand(Bukkit.getPlayer(possibleAdmin.getName()), "abl forsale " + protectedRegion.getId());
-                                                        //Stop looking for admins
-                                                        break;
+                                                //Ticket #63
+                                                //Make sure no members of the region have signed in either
+                                                boolean noMemberHasBeenSeen = true;
+                                                if (getConfig().getBoolean("buyland.offlineLimit.checkMembers") == true) {
+                                                    for (String memberName : protectedRegion.getMembers().getPlayers()) {
+                                                        timePlayerLastSeen = Bukkit.getOfflinePlayer(memberName).getLastPlayed();
+                                                        if ((timeCurrent - timePlayerLastSeen) <= maximumAllowedTimeAwayFromServer) {
+                                                            noMemberHasBeenSeen = false;
+                                                        }
+                                                    }
+                                                }
+
+                                                if (noMemberHasBeenSeen) {
+                                                    //neither owner nor members have signed in within timeframe
+                                                    
+                                                    //Sell region
+                                                    for (Player possibleAdmin : Bukkit.getOnlinePlayers()) {
+                                                        if(possibleAdmin.isOp() || possibleAdmin.hasPermission("buyland.admin")) {
+                                                            //use the first admin or op found to sell the region.
+                                                            //Notify admin or op found
+                                                            sendMessageInfo(possibleAdmin, "Owner: " + ownerNames + " Region: " + protectedRegion.getId());
+                                                            //Sell the region
+                                                            Bukkit.dispatchCommand(Bukkit.getPlayer(possibleAdmin.getName()), "abl forsale " + protectedRegion.getId());
+                                                            //Stop looking for admins
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                             }
@@ -568,7 +634,7 @@ public class BuyLand extends JavaPlugin {
                         //Reset the rental region if needed
                         if (resetExpiredRentedRegion(null, world, regionName) == true) {
                             //Send message to everyone
-                            if (config.getBoolean("buyland.rentbroadcastmsg") == true) {
+                            if (config.getBoolean("rentland.onRentExpire.broadcast.available") == true) {
                                 broadcastMessageInfo(regionName + " is now rentable!");
                             }                            
                         }
@@ -599,14 +665,15 @@ public class BuyLand extends JavaPlugin {
             }
         }
         
-        fixRegionNames();
+        onEnable_fixRegionNames();
+        onEnable_fixConfigSettings();
     }
 
     /**
      * converts the mixed case region names into lowercase region names in the rent and sign files.
      * Then save the config files.
      */
-    private void fixRegionNames() {
+    private void onEnable_fixRegionNames() {
         //Fix names in the Rent config file
         
         //Get the rent config section from the file
@@ -641,7 +708,130 @@ public class BuyLand extends JavaPlugin {
         saveSignConfig();
         
     }
+    private void onEnable_fixConfigSettings() {
+        final FileConfiguration config = getPluginConfig();
 
+        //Convert the general section
+        if (config.getString("buyland.landpriority") != null) {
+            config.set("general.regionPriority", config.getInt("buyland.landpriority"));
+            config.set("buyland.landpriority", null);
+        }
+
+        //Convert the buyland section
+        if (config.getString("buyland.offlinelimitenable") != null) {
+            config.set("buyland.offlineLimit.enable", config.getBoolean("buyland.offlinelimitenable"));
+            config.set("buyland.offlinelimitenable", null);
+        }
+        if (config.getString("buyland.offlinelimitindays") != null) {
+            config.set("buyland.offlineLimit.days", config.getInt("buyland.offlinelimitindays"));
+            config.set("buyland.offlinelimitindays", null);
+        }
+
+        if (config.getString("buyland.defaultprice") != null) {
+            config.set("buyland.onBuyFromBank.price.default", config.getDouble("buyland.defaultprice"));
+            config.set("buyland.defaultprice", null);
+        }
+        if (config.getString("buyland.defaultpriceperblock") != null) {
+            config.set("buyland.onBuyFromBank.price.perBlock", config.getDouble("buyland.defaultpriceperblock"));
+            config.set("buyland.defaultpriceperblock", null);
+        }
+        if (config.getString("buyland.usepriceperblock") != null) {
+            config.set("buyland.onBuyFromBank.price.usePerBlock", config.getBoolean("buyland.usepriceperblock"));
+            config.set("buyland.usepriceperblock", null);
+        }
+        
+        if (config.getString ("buyland.percentsellback") != null) {
+            config.set("buyland.onSaleToBank.price.percent", config.getDouble("buyland.percentsellback"));
+            config.set("buyland.percentsellback", null);
+        }
+        if (config.getString ("buyland.breaksignonbuy") != null) {
+            config.set("buyland.onSaleToBank.breaksign", config.getBoolean("buyland.breaksignonbuy"));
+            config.set("buyland.breaksignonbuy", null);
+        }
+
+        //Split one config into two related to buy and rent
+        if (config.getString("buyland.denyentrytoland") != null) {
+            Boolean value = config.getBoolean("buyland.denyentrytoland");
+            config.set("buyland.onCreate.denyEntry", value);
+            config.set("buyland.onBuyFromBank.denyEntry", value);
+            config.set("buyland.onSaleToBank.denyEntry", value);
+            config.set("rentland.onCreate.denyEntry", value);
+            config.set("rentland.onRentBegin.denyEntry", value);
+            config.set("rentland.onRentExpire.denyEntry", value);
+            config.set("buyland.denyentrytoland", null);
+        }
+        if (config.getString("buyland.landgreeting") != null) {
+            Boolean value = config.getBoolean("buyland.landgreeting");
+            config.set("buyland.onCreate.greetMessage.display", value);
+            config.set("buyland.onBuyFromBank.greetMessage.display", value);
+            config.set("buyland.onSaleToBank.greetMessage.display", value);
+            config.set("rentland.onCreate.greetMessage.display", value);
+            config.set("rentland.onRentBegin.greetMessage.display", value);
+            config.set("rentland.onRentExpire.greetMessage.display", value);
+            config.set("buyland.landgreeting", null);
+        }
+        if (config.getString("buyland.landgreetingerasemsg") != null) {
+            Boolean value = config.getBoolean("buyland.landgreetingerasemsg");
+            config.set("buyland.onCreate.greetMessage.erase", value);
+            config.set("buyland.onBuyFromBank.greetMessage.erase", value);
+            config.set("buyland.onSaleToBank.greetMessage.erase", value);
+            config.set("rentland.onCreate.greetMessage.erase", value);
+            config.set("rentland.onRentBegin.greetMessage.erase", value);
+            config.set("rentland.onRentExpire.greetMessage.erase", value);
+            config.set("buyland.landgreetingerasemsg", null);
+        }
+        if (config.getString("buyland.resetlandonsale") != null) {
+            Boolean value = config.getBoolean("buyland.resetlandonsale");
+            config.set("buyland.onCreate.saveSchematic", value);
+            config.set("buyland.onBuyFromBank.saveSchematic", value);
+            config.set("buyland.onBuyFromBank.placeSchematic", !value);
+            config.set("buyland.onSaleToBank.saveSchematic", !value);
+            config.set("buyland.onSaleToBank.placeSchematic", value);
+            config.set("rentland.onCreate.saveSchematic", value);
+            config.set("rentland.onRentBegin.saveSchematic", value);
+            config.set("rentland.onRentBegin.placeSchematic", !value);
+            config.set("rentland.onRentExpire.saveSchematic", !value);
+            config.set("rentland.onRentExpire.placeSchematic", value);
+            config.set("buyland.resetlandonsale", null);
+        }
+        if (config.getString("buyland.removelwcprotection") != null) {
+            Boolean value = config.getBoolean("buyland.removelwcprotection");
+            config.set("buyland.onCreate.removelwcprotection", value);
+            config.set("buyland.onBuyFromBank.removelwcprotection", value);
+            config.set("buyland.onSaleToBank.removelwcprotection", value);
+            config.set("rentland.onCreate.removelwcprotection", value);
+            config.set("rentland.onRentBegin.removelwcprotection", value);
+            config.set("rentland.onRentExpire.removelwcprotection", value);
+            config.set("buyland.removelwcprotection", null);
+        }
+        
+        //convert the rentland section
+        if (config.getString("buyland.defaultrentcostpermin") != null) {
+            config.set("rentland.onCreate.price.perMinDefault", config.getDouble("buyland.defaultrentcostpermin"));
+            config.set("buyland.defaultrentcostpermin", null);
+        }
+        if (config.getString("buyland.maxamountofrentland") != null) {
+            config.set("rentland.onRentBegin.maxRegions", config.getInt("buyland.maxamountofrentland"));
+            config.set("buyland.maxamountofrentland", null);
+        }
+        if (config.getString("buyland.rentbroadcastmsg") != null) {
+            config.set("rentland.onRentExpire.broadcast.available", config.getBoolean("buyland.rentbroadcastmsg"));
+            config.set("buyland.rentbroadcastmsg", null);
+        }
+        if (config.getString("buyland.notifyplayerofrenttime") != null) {
+            config.set("rentland.onPlayerJoin.notifyOfTimeLeft", config.getBoolean("buyland.notifyplayerofrenttime"));
+            config.set("buyland.notifyplayerofrenttime", null);
+        }
+        
+        File configFile = new File(getDataFolder(), "config.yml");
+        try {
+            config.save(configFile);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }        
+    }
+    
     /**
      * this will register a buyland sign
      * This makes sure there is only buyland sign
@@ -744,36 +934,51 @@ public class BuyLand extends JavaPlugin {
                     //set the rentable flag to true
                     getRentConfig().set("rent." + argRegionName + ".rentable", true);
                     
-                    //reset the land to original when the land is rented
-                    worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
-                    
+                    //Set the greeting message based on config
+                    if (getConfig().getBoolean("rentland.onRentExpire.greetMessage.display") == true) {
+                        //set the for rent message
+                        protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.rent.forrent")));
+                    }else if (getConfig().getBoolean("rentland.onRentExpire.greetMessage.erase") == true){
+                        protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
+                    }
+        
                     //LWC - Remove protection from area based on config
-                    if (getConfig().getBoolean("buyland.removelwcprotection") == true) {
+                    if (getConfig().getBoolean("rentland.onRentExpire.removelwcprotection") == true) {
                         LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
                     }
         
+                    //Reset the land to original when the land is sold based on config
+                    if (getConfig().getBoolean("buyland.onRentExpire.placeSchematic") == true) {
+                        worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
+                    }
+
+                    //Save a schematic of the land region for restore based on config
+                    if (getConfig().getBoolean("buyland.onRentExpire.saveSchematic") == true) {
+                        worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, (Player) sender);
+                    }
+    
+                    //Set region flags per config
+                    ConfigurationSection cs = getConfig().getConfigurationSection("rentland.onRentExpire.worldGuardFlags." + argRegionName);
+                    if (cs == null) {
+                        cs = getConfig().getConfigurationSection("rentland.onRentExpire.worldGuardFlags.default");
+                    }
+                    if (cs != null) {
+                        setWorldGuardFlag(sender, protectedRegion, cs);
+                    }
+                    
                     //Deny entry based on config
-                    if (getConfig().getBoolean("buyland.denyentrytoland") == true) {
+                    if (getConfig().getBoolean("rentland.onRentExpire.denyEntry") == true) {
                         protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
                     } else {
                         protectedRegion.setFlag(DefaultFlag.ENTRY, null);
                     }
         
-                    //Set the greeting message based on config
-                    if (getConfig().getBoolean("buyland.landgreeting") == true) {
-                        //set the for rent message
-                        protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.rent.forrent")));
-                    }else if (getConfig().getBoolean("buyland.landgreetingerasemsg") == true){
-                        protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
-                    }
-        
                     //get the owner of the region
                     DefaultDomain owners = protectedRegion.getOwners();
 
-                    //Get the number of regions the player already owns
-                    int currentNumberPlayerRentedRegions = getrentdbConfig().getInt(owners.toUserFriendlyString());
-                    getrentdbConfig().set(owners.toUserFriendlyString(), currentNumberPlayerRentedRegions - 1);
-            
+                    //Update the number of regions rented by the player and amount spent
+                    updateRegionsRented(owners.toUserFriendlyString(), -1, 0.00, 0.00);                            
+
                     //Save config
                     saverentdbConfig();
                     reloadrentdbConfig();                        
@@ -814,11 +1019,6 @@ public class BuyLand extends JavaPlugin {
                         }
                     }
 
-                    ConfigurationSection cs = getConfig().getConfigurationSection("buyland.worldGuardFlags.onRentExpire");
-                    if (cs != null) {
-                        //setWorldGuardFlag(sender, protectedRegion, cs);
-                    }
-                    
                     //Save the region
                     try {
                         regionManager.save();
@@ -845,6 +1045,7 @@ public class BuyLand extends JavaPlugin {
      *        M, Min, Minute, <br/>
      *        H, Hr,  Hour,   <br/>
      *        D,      Day     <br/>
+     *        W, Wk,  Week    <br/>
      * @return boolean true if the region was successfully sold, false otherwise.
      */
     protected boolean rentRegion(Player player, World world, String argRegionName, long timeUnitsToAdd, String argTimeType) {
@@ -920,6 +1121,11 @@ public class BuyLand extends JavaPlugin {
                     timeMultiplier = 24 * 60 * 60 * 1000L;
                     timeWording    = "Day";                                        
                 }
+                if (argTimeType.equalsIgnoreCase("w") || argTimeType.equalsIgnoreCase("wk") || argTimeType.equalsIgnoreCase("week")) {
+                    rentMultiplier = 7 * 24 * 60 * 1;
+                    timeMultiplier = 7 * 24 * 60 * 60 * 1000L;
+                    timeWording    = "Week";                                        
+                }
 
                 //Get the cost of the rent for the period
                 double priceToRentRegionForPeriod = getRentConfig().getDouble("rent." + argRegionName +".costpermin") * (double) timeUnitsToAdd * rentMultiplier;
@@ -952,11 +1158,46 @@ public class BuyLand extends JavaPlugin {
                             //Add it to the region
                             getRentConfig().set("rent." + argRegionName +".time", timepull + time);
 
+                            //LWC - Remove protection from area based on config
+                            if (getConfig().getBoolean("buyland.onRentExtend.removelwcprotection") == true) {
+                                LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
+                            }
+
+                            //Save a schematic of the land region for restore based on config
+                            if (getConfig().getBoolean("buyland.onRentExtend.saveSchematic") == true) {
+                                worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
+                            }
+                            
+                            //Reset the land to original based on config
+                            if (getConfig().getBoolean("buyland.onRentExtend.placeSchematic") == true) {
+                                worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
+                            }
+                            
+                            //Deny entry based on config
+                            if (getConfig().getBoolean("rentland.onRentExtend.denyEntry") == true) {
+                                protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
+                            } else {
+                                protectedRegion.setFlag(DefaultFlag.ENTRY, null);
+                            }
+
+                            //Set region flags per config
+                            ConfigurationSection cs = getConfig().getConfigurationSection("rentland.onRentExtend.worldGuardFlags." + argRegionName);
+                            if (cs == null) {
+                                cs = getConfig().getConfigurationSection("rentland.onRentExtend.worldGuardFlags.default");
+                            }
+                            if (cs != null) {
+                                setWorldGuardFlag(player, protectedRegion, cs);
+                            }
+                            
                             //Save the config files
                             saveRentConfig();
                             reloadRentConfig();
                             
-                            //No need to update sign if it exists
+                            //Update the number of regions rented by the player and amount spent
+                            updateRegionsRented(playerNameLowerCase, 0, 0.00, priceToRentRegionForPeriod);                            
+                            saverentdbConfig();
+
+                          //No need to update sign if it exists
                             
                             //return that the region was rented
                             return true;
@@ -982,8 +1223,8 @@ public class BuyLand extends JavaPlugin {
                             getRentConfig().set("rent." + argRegionName +".world", world.getName());
                             getRentConfig().set("rent." + argRegionName +".rentable", false);
                             
-                            //Update the number of regions rented by the player
-                            getrentdbConfig().set(playerNameLowerCase, getrentdbConfig().getInt(playerName) + 1);
+                            //Update the number of regions rented by the player and amount spent
+                            updateRegionsRented(playerNameLowerCase, +1, 0.00, priceToRentRegionForPeriod);                            
                             saverentdbConfig();
                             
                             //Update owner of rented domain 
@@ -991,29 +1232,47 @@ public class BuyLand extends JavaPlugin {
                                           dd.addPlayer(playerName);
                             protectedRegion.setOwners(dd);
 
+                            //set greeting message for region based on config
+                            if (getConfig().getBoolean("rentland.onRentBegin.greetMessage.display") == true) {
+                                protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.rent.rentby")) + playerName);
+                            } else if (getConfig().getBoolean("rentland.onRentBegin.greetMessage.erase") == true) {
+                                protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
+                            }
+
+                            //LWC - Remove protection from area based on config
+                            if (getConfig().getBoolean("buyland.onRentBegin.removelwcprotection") == true) {
+                                LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
+                            }
+
+                            //Save a schematic of the land region for restore based on config
+                            if (getConfig().getBoolean("buyland.onRentBegin.saveSchematic") == true) {
+                                worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
+                            }
+                            
+                            //Reset the land to original based on config
+                            if (getConfig().getBoolean("buyland.onRentBegin.placeSchematic") == true) {
+                                worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
+                            }
+                            
                             //Deny entry based on config
-                            if (getConfig().getBoolean("buyland.denyentrytoland") == true) {
+                            if (getConfig().getBoolean("rentland.onRentBegin.denyEntry") == true) {
                                 protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
                             } else {
                                 protectedRegion.setFlag(DefaultFlag.ENTRY, null);
                             }
 
-                            //set greeting message for region based on config
-                            if (getConfig().getBoolean("buyland.landgreeting") == true) {
-                                protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.rent.rentby")) + playerName);
-                            } else if (getConfig().getBoolean("buyland.landgreetingerasemsg") == true) {
-                                protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
-                            }
-
-                            //Save a schematic of the land region for restore
-                            worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
-                            
-                            //Update Sign to Extend Rent
-                            
-
                             //Flag the region as rented
                             protectedRegion.setFlag(DefaultFlag.BUYABLE, false);
 
+                            //Set region flags per config
+                            ConfigurationSection cs = getConfig().getConfigurationSection("rentland.onRentBegin.worldGuardFlags." + argRegionName);
+                            if (cs == null) {
+                                cs = getConfig().getConfigurationSection("rentland.onRentBegin.worldGuardFlags.default");
+                            }
+                            if (cs != null) {
+                                setWorldGuardFlag(player, protectedRegion, cs);
+                            }
+                            
                             //change sign to indicate the region is rented
                             if (getSignConfig().contains("sign." + argRegionName)) {
                                 Block signBlockLocation = stringToLocation(getSignConfig().getString("sign." + argRegionName)).getBlock();
@@ -1050,7 +1309,6 @@ public class BuyLand extends JavaPlugin {
         //return that the region was not rented
         return false;
     }
-
     /**
      * Indicates if the passed in protectedRegion is a rent region
      *  
@@ -1125,7 +1383,7 @@ public class BuyLand extends JavaPlugin {
                         Double regionPrice = getRegionPurchasePrice(protectedRegion);
         
                         //Get the sell back price of the region
-                        Double finalRegionPrice = regionPrice * getConfig().getDouble("buyland.percentsellback");
+                        Double finalRegionPrice = regionPrice * getConfig().getDouble("buyland.onSaleToBank.price.percent");
                         
                         //Sell it back
                         EconomyResponse economyResponse = BuyLand.econ.depositPlayer(ownerName, finalRegionPrice);
@@ -1149,45 +1407,63 @@ public class BuyLand extends JavaPlugin {
                         for (String owner : protectedRegion.getOwners().getPlayers()) {
                             //remove the player as owner
                             protectedRegion.getOwners().removePlayer(owner);
-                            //Get the number of regions the player currently owns
-                            int currentNumberPlayerOwnedRegions = getCustomConfig().getInt(owner);
-                            //Record the new number of regions the player owns
-                            getCustomConfig().set(owner, currentNumberPlayerOwnedRegions - 1);
+
+                            //Update the number of regions the player currently owns plus amount spent and earned
+                            updateRegionsOwned(owner, -1, finalRegionPrice, 0.00);
                         }
         
                         //Make sure there are no members of the region
                         for (String memberName : protectedRegion.getMembers().getPlayers()) { 
                             protectedRegion.getMembers().removePlayer(memberName);
                         }
-        
+
+                        //set the land priority
+                        protectedRegion.setPriority(getConfig().getInt("general.regionPriority"));
+
                         //Set the land greeting message based on config
-                        if (getConfig().getBoolean("buyland.landgreeting") == true) {
+                        if (getConfig().getBoolean("buyland.onSaleToBank.greetMessage.display") == true) {
                             protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.sell.forsale")));
                         } else {
-                            if (getConfig().getBoolean("buyland.landgreetingerasemsg") == true) {
+                            if (getConfig().getBoolean("buyland.onSaleToBank.greetMessage.erase") == true) {
                                 protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
                             }
                         }
         
+                        //LWC - Remove protection from area based on config
+                        if (getConfig().getBoolean("buyland.onSaleToBank.removelwcprotection") == true) {
+                            LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
+                        }
+
+                        //Reset the land to original when the land is sold based on config
+                        if (getConfig().getBoolean("buyland.onSaleToBank.placeSchematic") == true) {
+                            worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
+                        }
+
+                        //Save a schematic of the land region for restore based on config
+                        if (getConfig().getBoolean("buyland.onSaleToBank.saveSchematic") == true) {
+                            worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
+                        }
+        
                         //Protect land from entry based on config
-                        if (getConfig().getBoolean("buyland.denyentrytoland") == true) {
+                        if (getConfig().getBoolean("buyland.onSaleToBank.denyEntry") == true) {
                             protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
                         } else {
                             protectedRegion.setFlag(DefaultFlag.ENTRY, null);
                         }
         
-                        //set the land priority
-                        protectedRegion.setPriority(getConfig().getInt("buyland.landpriority"));
-        
+                        //Set region flags per config
+                        ConfigurationSection cs = getConfig().getConfigurationSection("buyland.onSaleToBank.worldGuardFlags." + argRegionName);
+                        if (cs == null) {
+                            cs = getConfig().getConfigurationSection("buyland.onSaleToBank.worldGuardFlags.default");
+                        }
+                        if (cs != null) {
+                            setWorldGuardFlag(player, protectedRegion, cs);
+                        }
+                        
                         //Save the config files
                         saveCustomConfig();
                         reloadCustomConfig();
                         
-                        //LWC - Remove protection from area based on config
-                        if (getConfig().getBoolean("buyland.removelwcprotection") == true) {
-                            LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
-                        }
-
                         //Change Sign to indicate it is for sale     
                         if (getSignConfig().contains("sign." + argRegionName)) {
                             Block signBlockLocation = stringToLocation(getSignConfig().getString("sign." + argRegionName)).getBlock();
@@ -1204,11 +1480,6 @@ public class BuyLand extends JavaPlugin {
                             }
                         }
                         
-                        //Reset the land to original when the land is sold based on config
-                        if (getConfig().getBoolean("buyland.resetlandonsale") == true) {
-                            worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
-                        }
-        
                         //Make the region buyable
                         protectedRegion.setFlag(DefaultFlag.BUYABLE, true);
         
@@ -1271,9 +1542,6 @@ public class BuyLand extends JavaPlugin {
                     if (!canPlayerOwnAnotherRegion(player)) {
                         sendMessageInfo(player, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.buy.max")));
                     } else {
-                        //Get the number of regions the player already owns
-                        int currentNumberPlayerOwnedRegions = getCustomConfig().getInt(playerName);
-    
                         //Get the cost of the region - do not trust price on the sign as it can possibly be changed
                         double regionPrice = getRegionPurchasePrice(protectedRegion);
     
@@ -1306,45 +1574,63 @@ public class BuyLand extends JavaPlugin {
                                                                   BuyLand.econ.format(economyResponse.amount), 
                                                                   BuyLand.econ.format(economyResponse.balance)));
                             
-                            //Deny entry based on config
-                            if (getConfig().getBoolean("buyland.denyentrytoland") == true) {
-                                protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
-                            } else {
-                                protectedRegion.setFlag(DefaultFlag.ENTRY, null);
-                            }
-    
+                            //set the land priority
+                            protectedRegion.setPriority(getConfig().getInt("general.regionPriority"));
+
                             //set greeting message for region based on config
-                            if (getConfig().getBoolean("buyland.landgreeting") == true) {
+                            if (getConfig().getBoolean("buyland.onBuyFromBank.greetMessage.display") == true) {
                                 protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, 
                                                         ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.buy.welcome1"))
                                                         + playerName + 
                                                         ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.buy.welcome2"))
                                                        );
                             } else {
-                                if (getConfig().getBoolean("buyland.landgreetingerasemsg") == true) {
+                                if (getConfig().getBoolean("buyland.onBuyFromBank.greetMessage.erase") == true) {
                                     protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
                                 }
                             }
+
+                            //LWC - Remove protection from area
+                            if (getConfig().getBoolean("buyland.onBuyFromBank.removelwcprotection") == true) {
+                                LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
+                            }
+
+                            //Save a schematic of the land region for restore based on config
+                            if (getConfig().getBoolean("buyland.onBuyFromBank.saveSchematic") == true) {
+                                worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
+                            }
+                            
+                            //Reset the land to original based on config
+                            if (getConfig().getBoolean("buyland.onBuyFromBank.placeSchematic") == true) {
+                                worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
+                            }
+
+                            //Deny entry based on config
+                            if (getConfig().getBoolean("buyland.onBuyFromBank.denyEntry") == true) {
+                                protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
+                            } else {
+                                protectedRegion.setFlag(DefaultFlag.ENTRY, null);
+                            }
     
-                            //Record the new number of regions the player owns
-                            getCustomConfig().set(playerName.toLowerCase(), currentNumberPlayerOwnedRegions + 1);
+                            //Set region flags per config
+                            ConfigurationSection cs = getConfig().getConfigurationSection("buyland.onBuyFromBank.worldGuardFlags." + argRegionName);
+                            if (cs == null) {
+                                cs = getConfig().getConfigurationSection("buyland.onBuyFromBank.worldGuardFlags.default");
+                            }
+                            if (cs != null) {
+                                setWorldGuardFlag(player, protectedRegion, cs);
+                            }
+                            
+                            //Update the number of regions the player currently owns plus amount spent and earned
+                            updateRegionsOwned(playerName.toLowerCase(), +1, 0.00, regionPrice);
+                           
                             saveCustomConfig();
     
                             //Set the owner of the land
                             DefaultDomain dd = new DefaultDomain();
                                           dd.addPlayer(playerName);
                             protectedRegion.setOwners(dd);
-    
-                            //LWC - Remove protection from area
-                            if (getConfig().getBoolean("buyland.removelwcprotection") == true) {
-                                LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
-                            }
-    
-                            //Save a schematic of the land region for restore based on config
-                            if (getConfig().getBoolean("buyland.resetlandonsale") == true) {
-                                worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
-                            }
-    
+                            
                             //change sign to indicate the region is sold
                             if (getSignConfig().contains("sign." + argRegionName)) {
                                 Block signBlockLocation = stringToLocation(getSignConfig().getString("sign." + argRegionName)).getBlock();
@@ -1378,6 +1664,58 @@ public class BuyLand extends JavaPlugin {
         //Return that the land was NOT purchased
         return false;
     }    
+
+    private void updateRegionsOwned(String playerName, int ownDifference, double earnedDifference, double spentDifference) {
+        //Make sure we are on the new format
+        if (!getCustomConfig().isSet(playerName + ".own")) {
+            //save the current value
+            int currentValue = getCustomConfig().getInt(playerName);
+            //remove the current entry
+            getCustomConfig().set(playerName, null);
+            
+            //convert to the new format since this path does not exist
+            getCustomConfig().set(playerName + ".own", currentValue);
+            getCustomConfig().set(playerName + ".earned", 0.00);
+            getCustomConfig().set(playerName + ".spent", 0.00);
+            
+        }
+        //Record the new number of regions the player owns
+        int ownAmount = getrentdbConfig().getInt(playerName + ".renting") + ownDifference;
+        if (ownAmount < 0) {
+            ownAmount = 0;
+        }
+        getCustomConfig().set(playerName + ".own", ownAmount);
+        //Record the new amount earned by the player
+        getCustomConfig().set(playerName + ".earned", getCustomConfig().getDouble(playerName + ".earned") + earnedDifference);
+        //Record the new amount spent by the player
+        getCustomConfig().set(playerName + ".spent", getCustomConfig().getDouble(playerName + ".spent") + spentDifference);
+    }
+    private void updateRegionsRented(String playerName, int rentingDifference, double earnedDifference, double spentDifference) {
+        //Make sure we are on the new format
+        if (!getrentdbConfig().isSet(playerName + ".renting")) {
+            //save the current value
+            int currentValue = getrentdbConfig().getInt(playerName);
+            //remove the current entry
+            getrentdbConfig().set(playerName, null);
+            
+            //convert to the new format since this path does not exist
+            getrentdbConfig().set(playerName + ".renting", currentValue);
+            getrentdbConfig().set(playerName + ".earned", 0.00);
+            getrentdbConfig().set(playerName + ".spent", 0.00);
+            
+        }
+        
+        //Record the new number of regions the player is renting
+        int rentingAmount = getrentdbConfig().getInt(playerName + ".renting") + rentingDifference;
+        if (rentingAmount < 0) {
+            rentingAmount = 0;
+        }
+        getrentdbConfig().set(playerName + ".renting", rentingAmount);
+        //Record the new amount earned by the player
+        getrentdbConfig().set(playerName + ".earned", getrentdbConfig().getDouble(playerName + ".earned") + earnedDifference);
+        //Record the new amount spent by the player
+        getrentdbConfig().set(playerName + ".spent", getrentdbConfig().getDouble(playerName + ".spent") + spentDifference);
+    }
     
     /**
      * Do the initial hook into the permissions provider.
@@ -1736,8 +2074,9 @@ public class BuyLand extends JavaPlugin {
      * @param regionMaximum Location of the maximum block of the region
      * @param regionName String name of the region
      * @param action String indicating if this is for a "buy" or "rent" action
+     * @param player Player of the one that is creating the region
      */
-    public void AddProtectedRegion(Location regionMinimum, Location regionMaximum, String regionName, String action) {
+    public void AddProtectedRegion(Location regionMinimum, Location regionMaximum, String regionName, String action, Player player) {
         if (action == "buy" || action == "rent") {
             //Get the requested world
             World world = regionMinimum.getWorld();
@@ -1755,37 +2094,85 @@ public class BuyLand extends JavaPlugin {
             //Add region to the manager
             regionManager.addRegion(protectedRegion);
 
+            //set the land priority
+            protectedRegion.setPriority(this.getConfig().getInt("general.regionPriority"));
+
             if (action == "buy") {
                 //Make the region buyable if action is buy
                 protectedRegion.setFlag(DefaultFlag.BUYABLE, true);
-            }
-
-            //Set the land greeting message based on config
-            if (this.getConfig().getBoolean("buyland.landgreeting") == true) {
-                if (action == "buy") {
-                    protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.sell.forsale")));
-                } else { // "rent"
-                    protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.rent.forrent")));                
-                }
-            } else if (this.getConfig().getBoolean("buyland.landgreetingerasemsg") == true) {
-                protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
-            }
-
-            //Deny entry based on config
-            if (this.getConfig().getBoolean("buyland.denyentrytoland") == true) {
-                protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
-            } else {
-                protectedRegion.setFlag(DefaultFlag.ENTRY, null);
-            }
-
-            //set the land priority
-            protectedRegion.setPriority(this.getConfig().getInt("buyland.landpriority"));
-
-            if (action == "rent") {
-                //do things specific to renting
                 
+                //Set the land greeting message based on config
+                if (getConfig().getBoolean("buyland.onCreate.greetMessage.display")) {
+                    protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.sell.forsale")));
+                } else if (this.getConfig().getBoolean("buyland.onCreate.greetMessage.erase") == true) {
+                    protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
+                }
+                
+                //LWC - Remove protection from area based on config
+                if (getConfig().getBoolean("buyland.onCreate.removelwcprotection") == true) {
+                    LWCProtectionRemove(regionMinimum, regionMaximum);
+                }
+
+                //Save a schematic of the land region for restore based on config
+                if (getConfig().getBoolean("buyland.onCreate.saveSchematic") == true) {
+                    worldEditSaveSchematic(regionMinimum, regionMaximum, regionName, player);
+                }
+
+                //Deny entry based on config
+                if (this.getConfig().getBoolean("buyland.onCreate.denyEntry") == true) {
+                    protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
+                } else {
+                    protectedRegion.setFlag(DefaultFlag.ENTRY, null);
+                }
+
+                //Set region flags per config
+                ConfigurationSection cs = getConfig().getConfigurationSection("buyland.onCreate.worldGuardFlags." + regionName);
+                if (cs == null) {
+                    cs = getConfig().getConfigurationSection("buyland.onCreate.worldGuardFlags.default");
+                }
+                if (cs != null) {
+                    setWorldGuardFlag(player, protectedRegion, cs);
+                }
+
+            } else { // "rent"
+                //Make the region non-buyable if action is rent
+                protectedRegion.setFlag(DefaultFlag.BUYABLE, false);
+
+                //Set the land greeting message based on config
+                if (getConfig().getBoolean("rentland.onCreate.greetMessage.display")) {
+                    protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.rent.forrent")));
+                } else if (getConfig().getBoolean("rentland.onCreate.greetMessage.erase") == true) {
+                    protectedRegion.setFlag(DefaultFlag.GREET_MESSAGE, null);
+                }
+
+                //Save a schematic of the land region for restore based on config
+                if (getConfig().getBoolean("rentland.onCreate.saveSchematic") == true) {
+                    worldEditSaveSchematic(regionMinimum, regionMaximum, regionName, player);
+                }
+
+                //LWC - Remove protection from area based on config
+                if (getConfig().getBoolean("rentland.onCreate.removelwcprotection") == true) {
+                    LWCProtectionRemove(regionMinimum, regionMaximum);
+                }
+
+                //Set region flags per config
+                ConfigurationSection cs = getConfig().getConfigurationSection("rentland.onCreate.worldGuardFlags." + regionName);
+                if (cs == null) {
+                    cs = getConfig().getConfigurationSection("rentland.onCreate.worldGuardFlags.default");
+                }
+                if (cs != null) {
+                    setWorldGuardFlag(player, protectedRegion, cs);
+                }
+
+                //Deny entry based on config
+                if (getConfig().getBoolean("rentland.onCreate.denyEntry") == true) {
+                    protectedRegion.setFlag(DefaultFlag.ENTRY, State.DENY);
+                } else {
+                    protectedRegion.setFlag(DefaultFlag.ENTRY, null);
+                }
+
                 //Get the default cost to rent per minute
-                double defaultcostpermin = this.getConfig().getDouble("buyland.defaultrentcostpermin");
+                double defaultcostpermin = getConfig().getDouble("rentland.onCreate.price.perMinDefault");
         
                 //set the config values for the region name
                 this.getRentConfig().set("rent." + regionName + ".time", 0);
@@ -1793,20 +2180,10 @@ public class BuyLand extends JavaPlugin {
                 this.getRentConfig().set("rent." + regionName + ".world", world.getName());
                 this.getRentConfig().set("rent." + regionName + ".costpermin", defaultcostpermin);
         
-                //this.logger.info("BuyLand_Debug - Save Rent Config Start 14");
                 saveRentConfig();
-                //this.logger.info("BuyLand_Debug - Save Rent Config End 14");
-                //this.logger.info("BuyLand_Debug - Reload Rent Config Start 14");
-        
                 reloadRentConfig();
-                //this.logger.info("BuyLand_Debug - Reload Rent Config End 14");
             }
 
-            //DefaultDomain dd = new DefaultDomain();
-            // add the player to the region      
-            //dd.addPlayer(playerName);
-            // set the player as the owner
-            //protectedRegion.setOwners(dd);
 
             logger.info("BuyLand: Added region: " + regionName);
             
@@ -1861,15 +2238,15 @@ public class BuyLand extends JavaPlugin {
     public Double getRegionPurchasePrice (ProtectedRegion protectedRegion) {
         Double regionPrice = protectedRegion.getFlag(DefaultFlag.PRICE);
         if (regionPrice == null) {
-            if (this.getConfig().getBoolean("buyland.usepriceperblock") == true) {
+            if (this.getConfig().getBoolean("buyland.onBuyFromBank.price.usePerBlock") == true) {
                 //get size of region
                 int size = protectedRegion.volume();
                 //  player.sendMessage("Area of blocks: " + size);
-                double regionPricePerBlock = this.getConfig().getDouble("buyland.defaultpriceperblock");
+                double regionPricePerBlock = this.getConfig().getDouble("buyland.onBuyFromBank.price.perBlock");
                 regionPrice = (double) (size * regionPricePerBlock);
                 //player.sendMessage("regionPrice: " + regionPrice + " - regionPricePerBlock: " + regionPricePerBlock);
             } else {
-                regionPrice = this.getConfig().getDouble("buyland.defaultprice");
+                regionPrice = this.getConfig().getDouble("buyland.onBuyFromBank.price.default");
             }
         }
         return regionPrice;
@@ -1963,8 +2340,9 @@ public class BuyLand extends JavaPlugin {
     public boolean canPlayerRentAnotherRegion(Player player) {
         //Get the number of regions the player is already renting
         int currentNumberPlayerRentedRegions = getrentdbConfig().getInt(player.getName());
+        if (currentNumberPlayerRentedRegions < 0) currentNumberPlayerRentedRegions = 0;
         //Get the maximum number of rentable regions
-        int maxNumberOfPlayerRentedRegions = getConfig().getInt("buyland.maxamountofrentland");
+        int maxNumberOfPlayerRentedRegions = getConfig().getInt("rentland.onRentBegin.maxRegions");
         //See if the player can rent more land
         if (currentNumberPlayerRentedRegions + 1 <= maxNumberOfPlayerRentedRegions) {
             return true;
@@ -1995,8 +2373,25 @@ public class BuyLand extends JavaPlugin {
      * @return boolean true if they have rights to own another region, false otherwise.
      */
     public boolean canPlayerOwnAnotherRegion(Player player) {
-        int currentNumberPlayerOwnedRegions = getCustomConfig().getInt(player.getName());
+        String playerName = player.getName().toLowerCase();
+        
+        //Make sure we are on the new format
+        if (!getCustomConfig().isSet(playerName + ".own")) {
+            //save the current value
+            int currentValue = getCustomConfig().getInt(playerName);
+            //remove the current entry
+            getCustomConfig().set(playerName, null);
+            
+            //convert to the new format since this path does not exist
+            getCustomConfig().set(playerName + ".own", currentValue);
+            getCustomConfig().set(playerName + ".earned", 0.00);
+            getCustomConfig().set(playerName + ".spent", 0.00);
+            
+        }
 
+        int currentNumberPlayerOwnedRegions = getCustomConfig().getInt(playerName + ".own");
+        if (currentNumberPlayerOwnedRegions < 0) currentNumberPlayerOwnedRegions = 0;
+        
         //   Loop through all the permission nodes from what the player currently owns to the max.
         //   Grab the first one that is higher.
         //   This code replaces the code that is not based on permissions:   int maximumPlayerOwnedRegions = this.getConfig().getInt("buyland.maxamountofland");
@@ -2023,6 +2418,15 @@ public class BuyLand extends JavaPlugin {
         long minuteLength = secondLength * 60;
         long hourLength = minuteLength * 60;
         long dayLength = hourLength * 24;
+        long weekLength = dayLength * 7;
+        
+        //weeks
+        if (timeDifference > weekLength) {
+            //add number of weeks to output
+            auxRet += (timeDifference / weekLength) + " weeks ";
+            //reduce remaining time difference
+            timeDifference = timeDifference % weekLength;
+        }
         
         //days
         if (timeDifference > dayLength) {

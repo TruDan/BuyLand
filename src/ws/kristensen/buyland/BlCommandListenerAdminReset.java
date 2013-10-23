@@ -70,12 +70,12 @@ public class BlCommandListenerAdminReset implements CommandExecutor {
                                                                       );
 
                         //Reset the land to original based on config
-                        if (plugin.getConfig().getBoolean("buyland.resetlandonsale") == true) {
+                        if (plugin.getConfig().getBoolean("buyland.onBuyFromBank.placeSchematic") == true) {
                             plugin.worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
                             //Notify the user
                             plugin.sendMessageInfo(sender, "Region Reset to Default! Use forsale command to erase all owners and members!");
                         } else {
-                            plugin.sendMessageInfo(sender, "Set resetlandonsale to true in the config file to use this feature!");
+                            plugin.sendMessageInfo(sender, "Set buyland.onBuyFromBank.placeSchematic to true in the config file to use this feature!");
                         }
                     }
                 }

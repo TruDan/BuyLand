@@ -93,7 +93,7 @@ public class BlEventListenerPlayerInteract extends JavaPlugin implements Listene
     	                if (player.hasPermission("buyland.signuse") || player.hasPermission("buyland.all")) {
                             //RENT SIGN 
                             if (sign.getLine(1).equalsIgnoreCase("For Rent") || sign.getLine(1).equalsIgnoreCase("Extend Rent")) {
-                                //Get the command on the sign line 3 which contains the [TimeQuantity] [Sec/Min/Hr/Day] combination to pass to the command
+                                //Get the command on the sign line 3 which contains the [TimeQuantity] [Sec/Min/Hr/Day/Wk] combination to pass to the command
                                 String line3 = sign.getLine(3);
                                 
                                 //execute a command as if the player typed it

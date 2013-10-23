@@ -118,11 +118,11 @@ public class BlEventListenerSignChange extends JavaPlugin implements Listener  {
 
                            //make sure region is rentable
                            if (plugin.getRentConfig().contains("rent." + regionName + ".time") == true) {
-                               //Make sure that line 3 is in the format of:   [TimeQuantity] [Sec/Min/Hr/Day]
-                               //    That way the parameter can be passed on as the 2nd and 3rd parameter to:  /rentland [regionName] [TimeQuantity] [Sec/Min/Hr/Day]
+                               //Make sure that line 3 is in the format of:   [TimeQuantity] [Sec/Min/Hr/Day/Wk]
+                               //    That way the parameter can be passed on as the 2nd and 3rd parameter to:  /rentland [regionName] [TimeQuantity] [Sec/Min/Hr/Day/Wk]
                                String parts[] = event.getLine(3).split(" ");
                                boolean isValidTimeQuantity = false;
-                               boolean isValidSecMinHrDayFlag = false;
+                               boolean isValidTimeFlag = false;
 
                                if (parts.length == 2) {
                                    //Check the TimeQuantity portion
@@ -132,16 +132,17 @@ public class BlEventListenerSignChange extends JavaPlugin implements Listener  {
                                    } catch(NumberFormatException e) {
                                    }
                                    
-                                   //Check the [Sec/Min/Hr/Day] portion
-                                   if (parts[1].equalsIgnoreCase("S") || parts[1].equalsIgnoreCase("Sec") || parts[1].equalsIgnoreCase("Second")) { parts[1] = "Second"; isValidSecMinHrDayFlag = true;}
-                                   if (parts[1].equalsIgnoreCase("M") || parts[1].equalsIgnoreCase("Min") || parts[1].equalsIgnoreCase("Minute")) { parts[1] = "Minute"; isValidSecMinHrDayFlag = true;}
-                                   if (parts[1].equalsIgnoreCase("H") || parts[1].equalsIgnoreCase("Hr")  || parts[1].equalsIgnoreCase("Hour")  ) { parts[1] = "Hour";   isValidSecMinHrDayFlag = true;}
-                                   if (parts[1].equalsIgnoreCase("D") ||                                     parts[1].equalsIgnoreCase("Day")   ) { parts[1] = "Day";    isValidSecMinHrDayFlag = true;}
+                                   //Check the [Sec/Min/Hr/Day/Wk] portion
+                                   if (parts[1].equalsIgnoreCase("S") || parts[1].equalsIgnoreCase("Sec") || parts[1].equalsIgnoreCase("Second")) { parts[1] = "Second"; isValidTimeFlag = true;}
+                                   if (parts[1].equalsIgnoreCase("M") || parts[1].equalsIgnoreCase("Min") || parts[1].equalsIgnoreCase("Minute")) { parts[1] = "Minute"; isValidTimeFlag = true;}
+                                   if (parts[1].equalsIgnoreCase("H") || parts[1].equalsIgnoreCase("Hr")  || parts[1].equalsIgnoreCase("Hour")  ) { parts[1] = "Hour";   isValidTimeFlag = true;}
+                                   if (parts[1].equalsIgnoreCase("D") ||                                     parts[1].equalsIgnoreCase("Day")   ) { parts[1] = "Day";    isValidTimeFlag = true;}
+                                   if (parts[1].equalsIgnoreCase("W") || parts[1].equalsIgnoreCase("Wk")  || parts[1].equalsIgnoreCase("Week")  ) { parts[1] = "Week";   isValidTimeFlag = true;}
                                }
                                
                                //see if they are valid settings
-                               if (isValidTimeQuantity && isValidSecMinHrDayFlag) {
-                                   //update line 3 with the properly cased [Sec/Min/Hr/Day]
+                               if (isValidTimeQuantity && isValidTimeFlag) {
+                                   //update line 3 with the properly cased [Sec/Min/Hr/Day/Wk]
                                    event.setLine(3, parts[0] + " " + parts[1]);
                                    
                                    //create a sign config for the sign being created
@@ -152,7 +153,7 @@ public class BlEventListenerSignChange extends JavaPlugin implements Listener  {
                                } else {
                                    event.setLine(0, "ERROR!");
                                    event.setLine(1, "ERROR!");
-                                   plugin.sendMessageWarning(player, "Line 4 must be in format of [TimeQuantity] [Sec/Min/Hr/Day].");
+                                   plugin.sendMessageWarning(player, "Line 4 must be in format of [TimeQuantity] [Sec/Min/Hr/Day/Wk].");
                                    plugin.sendMessageInfo(player, "Example: 1 Hour");
                                }
                            } else {

@@ -53,7 +53,7 @@ public class BlCommandListenerAdminSave implements CommandExecutor {
                         plugin.sendMessageWarning(sender, "Select a worldedit region first.");
                     } else {
                         //Add region to manager
-                        plugin.AddProtectedRegion(worldEditSelection.getMinimumPoint(), worldEditSelection.getMaximumPoint(), argRegionName, "buy");
+                        plugin.AddProtectedRegion(worldEditSelection.getMinimumPoint(), worldEditSelection.getMaximumPoint(), argRegionName, "buy", player);
 
                         //Notify player
                         plugin.sendMessageInfo(sender, "Region Added!");

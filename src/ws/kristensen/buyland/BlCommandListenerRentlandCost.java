@@ -38,7 +38,6 @@ public class BlCommandListenerRentlandCost implements CommandExecutor {
         if(args.length != 1) {
             plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /rentland cost [RegionName]");
-            plugin.sendMessageInfo(sender, "Usage: /rentland [RegionName] cost");
         } else {
             //Extract the passed arguments
             String argRegionName = args[0].toLowerCase();
@@ -60,13 +59,15 @@ public class BlCommandListenerRentlandCost implements CommandExecutor {
                             double s = plugin.getRentConfig().getDouble("rent." + argRegionName +".costpermin") / 2;
                             double m = plugin.getRentConfig().getDouble("rent." + argRegionName +".costpermin");
                             double h = plugin.getRentConfig().getDouble("rent." + argRegionName +".costpermin") * 60;
-                            double d = plugin.getRentConfig().getDouble("rent." + argRegionName +".costpermin") * 1440;
+                            double d = plugin.getRentConfig().getDouble("rent." + argRegionName +".costpermin") * 60 * 24;
+                            double w = plugin.getRentConfig().getDouble("rent." + argRegionName +".costpermin") * 60 * 24 * 7;
 
                             plugin.sendMessageInfo(sender, "The rent of " + argRegionName + " is: ");
                             plugin.sendMessageInfo(sender, "1 Second = " + s);
                             plugin.sendMessageInfo(sender, "1 Minute = " + m);
                             plugin.sendMessageInfo(sender, "1 Hour = " + h);
                             plugin.sendMessageInfo(sender, "1 Day = " + d);
+                            plugin.sendMessageInfo(sender, "1 Week = " + w);
                         } else {
                             //this is buyland... call that command instead
                             Bukkit.dispatchCommand(sender, "priceland " + argRegionName);

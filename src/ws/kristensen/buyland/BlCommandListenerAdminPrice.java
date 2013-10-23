@@ -13,7 +13,7 @@ import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 /**
  * Handles the Admin command:<br/>
  *      /adminbuyland price [Sale Region Name] [Cost]
- *      /adminbuyland price [Rent Region Name] [Cost] [Sec/Min/Hr/Day]
+ *      /adminbuyland price [Rent Region Name] [Cost] [Sec/Min/Hr/Day/Wk]
  * <hr/>
  * Use this to set a price for each individual region.<br/>
  * This works for both rent and Sale regions<br/>
@@ -45,7 +45,7 @@ public class BlCommandListenerAdminPrice implements CommandExecutor {
         if(args.length < 2 || args.length > 3) {
             plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl price [SaleRegionName] [Cost]");
-            plugin.sendMessageInfo(sender, "Usage: /abl price [RentRegionName] [Cost] [Sec/Min/Hr/Day]");
+            plugin.sendMessageInfo(sender, "Usage: /abl price [RentRegionName] [Cost] [Sec/Min/Hr/Day/Wk]");
         } else {
             //Extract the passed arguments
             String argRegionName = args[0].toLowerCase();
@@ -71,13 +71,13 @@ public class BlCommandListenerAdminPrice implements CommandExecutor {
                     } else {
                         if (plugin.isRentRegion(protectedRegion)) {
                             //TODO: Allow easy adjusting of pricing for rented regions.  
-                            //      Rent pricing would take 1 additional parameter [Sec/Min/Hr/Day] To indicate what scale the cost arg represents
+                            //      Rent pricing would take 1 additional parameter [Sec/Min/Hr/Day/Wk] To indicate what scale the cost arg represents
                             //      The price would be stored as price per minute, just as it is stored in the config files.
 
                             //Make sure there is a 3rd parameter
                             if (args.length != 3) {
                                 plugin.sendMessageInfo(sender, "Incorrect number of parameters for a rent region.");
-                                plugin.sendMessageInfo(sender, "Usage: /abl price [RentRegionName] [Cost] [Sec/Min/Hr/Day]");                                
+                                plugin.sendMessageInfo(sender, "Usage: /abl price [RentRegionName] [Cost] [Sec/Min/Hr/Day/Wk]");                                
                             } else {
                                 //Get the passed in duration of the cost
                                 String argTimeType = args[2];
@@ -96,6 +96,9 @@ public class BlCommandListenerAdminPrice implements CommandExecutor {
                                 }
                                 if (argTimeType.equalsIgnoreCase("d") || argTimeType.equalsIgnoreCase("day"))    { 
                                     rentCostPerMinute /= 60 * 24;
+                                }
+                                if (argTimeType.equalsIgnoreCase("w") || argTimeType.equalsIgnoreCase("wk") || argTimeType.equalsIgnoreCase("week")) {
+                                    rentCostPerMinute /= 7 * 24 * 60;
                                 }
                                 //Set the cost of the rent for the period of 1 minute
                                 plugin.getRentConfig().set("rent." + argRegionName +".costpermin", rentCostPerMinute);

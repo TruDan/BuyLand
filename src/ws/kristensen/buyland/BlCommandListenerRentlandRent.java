@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 /**
  * Handles the command:<br/>
- *      /rentland [Region Name] [Time Quantity] [Sec/Min/Hour/Day]
+ *      /rentland [Region Name] [Time Quantity] [Sec/Min/Hr/Day/Wk]
  * <hr/>
  * Rents a region.<br/>
  * <br/> 
@@ -34,7 +34,7 @@ public class BlCommandListenerRentlandRent implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 3) {
             plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
-            plugin.sendMessageInfo(sender, "Usage: /rentland [RegionName] [TimeQuantity] [Sec/Min/Hr/Day]");
+            plugin.sendMessageInfo(sender, "Usage: /rentland [RegionName] [TimeQuantity] [Sec/Min/Hr/Day/Wk]");
         } else {
             //Extract the passed arguments
             String argRegionName = args[0].toLowerCase();

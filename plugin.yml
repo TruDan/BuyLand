@@ -1,5 +1,5 @@
 name: BuyLand
-version: 0.8.5
+version: 0.8.6
 main: ws.kristensen.buyland.BuyLand
 description: Buy, Sell and Rent WorldGuard Regions
 authors: [The_Nut, chriztopia]
@@ -74,6 +74,9 @@ permissions:
         default: op
     buyland.list:
         description: List all owned regions.
+        default: op
+    buyland.top:
+        description: List the top players in money spent, regions owned, and regions renting
         default: op
     buyland.admin.list:
         description: List all owned regions for a player.

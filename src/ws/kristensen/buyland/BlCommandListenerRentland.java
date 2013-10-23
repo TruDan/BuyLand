@@ -19,7 +19,7 @@ import org.bukkit.entity.Player;
  *      /rentland removemember [Region Name] [Player Name]<br/>
  *      /rentland cost [Region Name]<br/>
  *      /rentland time [Region Name]<br/>
- *      /rentland [Region Name] [TimeQuantity] [Sec/Min/Hour/Day]<br/>
+ *      /rentland [Region Name] [TimeQuantity] [Sec/Min/Hr/Day/Wk]<br/>
  * <hr/>
  * This will redirect to the class that handles the specific sub-command.<br/>
  * <br/> 
@@ -82,7 +82,7 @@ public class BlCommandListenerRentland implements CommandExecutor {
             plugin.sendMessageInfo(sender, ChatColor.YELLOW + "Rentland Commands", false);
             plugin.sendMessageInfo(sender, "/rentland cost [RegionName] - Check cost of rentable region.", false);
             plugin.sendMessageInfo(sender, "/rentland time [RegionName] - Check time left of a rented region.", false);
-            plugin.sendMessageInfo(sender, "/rentland [RegionName] [TimeQuantity] [Sec/Min/Hour/Day] - Rent a region.", false);
+            plugin.sendMessageInfo(sender, "/rentland [RegionName] [TimeQuantity] [Sec/Min/Hr/Day/Wk] - Rent a region.", false);
             plugin.sendMessageInfo(sender, "/rentland addmember [RegionName] [PlayerName] - Add a player as member of region.", false);
             plugin.sendMessageInfo(sender, "/rentland removemember [RegionName] [PlayerName] - Remove a player as member of region.", false);
         }

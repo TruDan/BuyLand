@@ -51,7 +51,7 @@ public class BlCommandListenerRentlandSave implements CommandExecutor {
                         plugin.sendMessageWarning(sender, "Select a worldedit region first.");
                     } else {
                         //Add region to manager
-                        plugin.AddProtectedRegion(worldEditSelection.getMinimumPoint(), worldEditSelection.getMaximumPoint(), argRegionName, "rent");
+                        plugin.AddProtectedRegion(worldEditSelection.getMinimumPoint(), worldEditSelection.getMaximumPoint(), argRegionName, "rent", player);
 
                         //Notify player
                         plugin.sendMessageInfo(sender, "Region Added!");

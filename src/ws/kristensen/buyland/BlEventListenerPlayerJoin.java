@@ -35,18 +35,22 @@ public class BlEventListenerPlayerJoin extends JavaPlugin implements Listener  {
 		String playerNameLowerCase = playerName.toLowerCase();
 		
 		//Add the player to the CustomConfig
-		plugin.getCustomConfig().addDefault(playerNameLowerCase, 0);
+        plugin.getCustomConfig().addDefault(playerNameLowerCase + ".own", 0);
+        plugin.getCustomConfig().addDefault(playerNameLowerCase + ".earned", 0.00);
+        plugin.getCustomConfig().addDefault(playerNameLowerCase + ".spent", 0.00);
 		plugin.getCustomConfig().options().copyDefaults(true);
 		plugin.saveCustomConfig();
 		
 
 		//Add the player to the rentDbConfig
-		plugin.getrentdbConfig().addDefault(playerNameLowerCase, 0);
+        plugin.getrentdbConfig().addDefault(playerNameLowerCase + ".renting", 0);
+        plugin.getrentdbConfig().addDefault(playerNameLowerCase + ".earned", 0.00);
+        plugin.getrentdbConfig().addDefault(playerNameLowerCase + ".spent", 0.00);
 		plugin.getrentdbConfig().options().copyDefaults(true);
 		plugin.saverentdbConfig();
 		
 		//see if we need to notify the player of time left on regions they own
-		if (plugin.getConfig().getBoolean("buyland.notifyplayerofrenttime") == true) {
+		if (plugin.getConfig().getBoolean("rentland.onPlayerJoin.notifyOfTimeLeft") == true) {
 		    //Loop through all the worlds
 		    for (World world : Bukkit.getWorlds()) {
 		        //Unknown why we check, because it was given to us.

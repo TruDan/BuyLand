@@ -70,17 +70,11 @@ public class BlCommandListenerAdminLwcRemove implements CommandExecutor {
                                                                        protectedRegion.getMaximumPoint().getBlockZ()
                                                                       );
 
+                        //force LWC protection removal from region since this is not an automated process
+                        plugin.LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
                         
-                        //LWC - Remove protection from area based on config
-                        if (plugin.getConfig().getBoolean("buyland.removelwcprotection") == true) {
-                            plugin.LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
-
-                            //Notify user the protection was removed
-                            plugin.sendMessageInfo(sender, "Removed LWCProtections from region: " + argRegionName);
-                        } else {
-                            plugin.sendMessageInfo(sender, "LWCProtections were not removed, you must enable it in the config.");
-                            plugin.sendMessageInfo(sender, "Do not enable it if you do not have LWC installed!");
-                        }
+                        //Notify user the protection was removed
+                        plugin.sendMessageInfo(sender, "Removed LWCProtections from region: " + argRegionName);
                     }
                 }
             } else {
