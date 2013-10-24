@@ -28,8 +28,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-
 import org.bukkit.plugin.RegisteredServiceProvider;
 
 import org.bukkit.plugin.java.JavaPlugin;
@@ -493,8 +491,8 @@ public class BuyLand extends JavaPlugin {
         this.getServer().getPluginManager().registerEvents(elPlayerJoin, this);      //Handle player joins
         this.getServer().getPluginManager().registerEvents(elSignChange, this);      //Handle sign create / alter
 
-    	PluginDescriptionFile pdffile = this.getDescription();
-    	this.logger.info(pdffile.getName() + " version " + pdffile.getVersion() + " is enabled!");
+    	//PluginDescriptionFile pdffile = this.getDescription();
+    	//this.logger.info(pdffile.getName() + " version " + pdffile.getVersion() + " is enabled!");
     	
     	//setup the config files on disk    	
     	getLanguageConfig();   //Load or create the defaults
@@ -948,12 +946,12 @@ public class BuyLand extends JavaPlugin {
                     }
         
                     //Reset the land to original when the land is sold based on config
-                    if (getConfig().getBoolean("buyland.onRentExpire.placeSchematic") == true) {
+                    if (getConfig().getBoolean("rentland.onRentExpire.placeSchematic") == true) {
                         worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
                     }
 
                     //Save a schematic of the land region for restore based on config
-                    if (getConfig().getBoolean("buyland.onRentExpire.saveSchematic") == true) {
+                    if (getConfig().getBoolean("rentland.onRentExpire.saveSchematic") == true) {
                         worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, (Player) sender);
                     }
     
@@ -1159,17 +1157,17 @@ public class BuyLand extends JavaPlugin {
                             getRentConfig().set("rent." + argRegionName +".time", timepull + time);
 
                             //LWC - Remove protection from area based on config
-                            if (getConfig().getBoolean("buyland.onRentExtend.removelwcprotection") == true) {
+                            if (getConfig().getBoolean("rentland.onRentExtend.removelwcprotection") == true) {
                                 LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
                             }
 
                             //Save a schematic of the land region for restore based on config
-                            if (getConfig().getBoolean("buyland.onRentExtend.saveSchematic") == true) {
+                            if (getConfig().getBoolean("rentland.onRentExtend.saveSchematic") == true) {
                                 worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
                             }
                             
                             //Reset the land to original based on config
-                            if (getConfig().getBoolean("buyland.onRentExtend.placeSchematic") == true) {
+                            if (getConfig().getBoolean("rentland.onRentExtend.placeSchematic") == true) {
                                 worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
                             }
                             
@@ -1240,17 +1238,17 @@ public class BuyLand extends JavaPlugin {
                             }
 
                             //LWC - Remove protection from area based on config
-                            if (getConfig().getBoolean("buyland.onRentBegin.removelwcprotection") == true) {
+                            if (getConfig().getBoolean("rentland.onRentBegin.removelwcprotection") == true) {
                                 LWCProtectionRemove(protectedRegionMinimum, protectedRegionMaximum);
                             }
 
                             //Save a schematic of the land region for restore based on config
-                            if (getConfig().getBoolean("buyland.onRentBegin.saveSchematic") == true) {
+                            if (getConfig().getBoolean("rentland.onRentBegin.saveSchematic") == true) {
                                 worldEditSaveSchematic(protectedRegionMinimum, protectedRegionMaximum, argRegionName, player);
                             }
                             
                             //Reset the land to original based on config
-                            if (getConfig().getBoolean("buyland.onRentBegin.placeSchematic") == true) {
+                            if (getConfig().getBoolean("rentland.onRentBegin.placeSchematic") == true) {
                                 worldEditPlaceSchematic(protectedRegionMinimum, argRegionName);
                             }
                             
@@ -1352,7 +1350,7 @@ public class BuyLand extends JavaPlugin {
             sendMessageInfo(player, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.general.error1")));
         } else {
             //make sure player owns region, or is initiated by an admin
-            if (!(fromAdmin || protectedRegion.getOwners().toPlayersString().contains(player.getName()))) {
+            if (!(fromAdmin || protectedRegion.getOwners().toPlayersString().contains(player.getName().toLowerCase()))) {
                 sendMessageInfo(player, ChatColor.translateAlternateColorCodes('&', getLanguageConfig().getString("buyland.sell.dontown")));
             } else {
                 //see if the land is rentable 
@@ -1622,7 +1620,7 @@ public class BuyLand extends JavaPlugin {
                             }
                             
                             //Update the number of regions the player currently owns plus amount spent and earned
-                            updateRegionsOwned(playerName.toLowerCase(), +1, 0.00, regionPrice);
+                            updateRegionsOwned(playerName, +1, 0.00, regionPrice);
                            
                             saveCustomConfig();
     
@@ -1666,6 +1664,8 @@ public class BuyLand extends JavaPlugin {
     }    
 
     private void updateRegionsOwned(String playerName, int ownDifference, double earnedDifference, double spentDifference) {
+        //make sure it is lower case
+        playerName = playerName.toLowerCase();
         //Make sure we are on the new format
         if (!getCustomConfig().isSet(playerName + ".own")) {
             //save the current value
@@ -1691,6 +1691,8 @@ public class BuyLand extends JavaPlugin {
         getCustomConfig().set(playerName + ".spent", getCustomConfig().getDouble(playerName + ".spent") + spentDifference);
     }
     private void updateRegionsRented(String playerName, int rentingDifference, double earnedDifference, double spentDifference) {
+        //make sure it is lower case
+        playerName = playerName.toLowerCase();
         //Make sure we are on the new format
         if (!getrentdbConfig().isSet(playerName + ".renting")) {
             //save the current value
@@ -2184,8 +2186,7 @@ public class BuyLand extends JavaPlugin {
                 reloadRentConfig();
             }
 
-
-            logger.info("BuyLand: Added region: " + regionName);
+            sendMessageInfo(null, "Added region: " + regionName);
             
             try {
                 regionManager.save();
