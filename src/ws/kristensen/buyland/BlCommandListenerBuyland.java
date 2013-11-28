@@ -45,11 +45,11 @@ public class BlCommandListenerBuyland implements CommandExecutor {
 
             //See if the player has permission to do the command
             if (args.length > 0) {
-                if (args[0].equalsIgnoreCase("list"))         { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandList(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("tp"))           { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandTeleport(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("addmember"))    { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandMemberAdd(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("removemember")) { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandMemberRemove(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("top"))          { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerBuylandTop(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("list"))         { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerBuylandList(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("tp"))           { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerBuylandTeleport(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("addmember"))    { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerBuylandMemberAdd(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("removemember")) { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerBuylandMemberRemove(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("top"))          { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerBuylandTop(plugin).onCommand(sender, command, label, args); }
                 else                                          {                                            return new BlCommandListenerBuylandBuy(plugin).onCommand(sender, command, label, args); }
             } else {
                 plugin.sendMessageInfo(sender, ChatColor.YELLOW + "Buyland Commands", false);

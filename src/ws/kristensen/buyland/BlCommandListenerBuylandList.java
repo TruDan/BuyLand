@@ -40,7 +40,7 @@ public class BlCommandListenerBuylandList implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 0) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /buyland list");
         } else {
             //See if the person requesting the information is a player

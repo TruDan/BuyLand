@@ -33,7 +33,7 @@ public class BlCommandListenerAdminForSale implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl forsale [RegionName]");
         } else {
             //Extract the passed arguments
@@ -46,7 +46,7 @@ public class BlCommandListenerAdminForSale implements CommandExecutor {
 
                 //See if the player has permission to do the command
                 if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")) {
-                    if (plugin.sellRegion(player, true, world, argRegionName)) {
+                    if (plugin.ownSellRegion(player, true, world, argRegionName)) {
                         //optionally do something when it is sold.
                     } else {
                         //optionally do something if it is unsuccessful.

@@ -38,7 +38,7 @@ public class BlCommandListenerRentlandMemberRemove implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 2) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /rentland removemember [RegionName] [PlayerName]");
         } else {
             //Extract the passed arguments
@@ -60,11 +60,11 @@ public class BlCommandListenerRentlandMemberRemove implements CommandExecutor {
                     //Make sure the region exists
                     if (protectedRegion == null) {
                         //Region does not exist.
-                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
                     } else {
-                        if (!plugin.getRentConfig().contains("rent." + argRegionName +".rentable")) {
+                        if (!plugin.rentGetConfig().contains("rent." + argRegionName +".rentable")) {
                             //Can't remove a member while region is not rentable
-                            plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.rent.error2")));
+                            plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.rent.error2")));
                         } else {
                             //Get the current region owners
                             DefaultDomain owners = protectedRegion.getOwners();
@@ -72,7 +72,7 @@ public class BlCommandListenerRentlandMemberRemove implements CommandExecutor {
                             //See if the player is an owner of the region and has rights to remove a member
                             if (!owners.toPlayersString().contains(playerName.toLowerCase())) {
                                 //TODO send more appropriate message like you cannot remove a member from a region you do not own. 
-                                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.sell.dontown")));
+                                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.sell.dontown")));
                             } else {
                                 //Get the members of the region and remove the requested player name
                                 protectedRegion.getMembers().removePlayer(argPlayerName);
@@ -85,12 +85,12 @@ public class BlCommandListenerRentlandMemberRemove implements CommandExecutor {
                                 }
 
                                 //Notify the user
-                                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.member.removemember")));
+                                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.member.removemember")));
                             }
                         }
                     }
                 } else {
-                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.rent.noperm")));
+                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.rent.noperm")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

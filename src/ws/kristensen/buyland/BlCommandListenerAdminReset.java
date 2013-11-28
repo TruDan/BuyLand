@@ -40,7 +40,7 @@ public class BlCommandListenerAdminReset implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         //make sure the correct number of args is used
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl reset [RegionName]");
         } else {
             //Extract the passed arguments
@@ -60,7 +60,7 @@ public class BlCommandListenerAdminReset implements CommandExecutor {
                     //make sure the region exists
                     if (protectedRegion == null) {
                         //Region does not exist.
-                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
                     } else {
                         //Get protected region min location
                         Location protectedRegionMinimum = new Location(world, 

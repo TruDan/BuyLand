@@ -49,19 +49,19 @@ public class BlCommandListenerRentland implements CommandExecutor {
 
             if (args.length > 0) {
                 //Handle commands where the indicator is the 1st word
-                if (args[0].equalsIgnoreCase("addmember"))    { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerRentlandMemberAdd(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("removemember")) { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerRentlandMemberRemove(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("save"))         { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerRentlandSave(plugin).onCommand(sender, command, label, args); }
-                if (args[0].equalsIgnoreCase("cost"))         { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerRentlandCost(plugin).onCommand(sender, command, label, args); }                    
-                if (args[0].equalsIgnoreCase("reset"))        { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerRentlandReset(plugin).onCommand(sender, command, label, args); }                    
-                if (args[0].equalsIgnoreCase("time"))         { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerRentlandTime(plugin).onCommand(sender, command, label, args); }                    
+                if (args[0].equalsIgnoreCase("addmember"))    { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerRentlandMemberAdd(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("removemember")) { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerRentlandMemberRemove(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("save"))         { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerRentlandSave(plugin).onCommand(sender, command, label, args); }
+                if (args[0].equalsIgnoreCase("cost"))         { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerRentlandCost(plugin).onCommand(sender, command, label, args); }                    
+                if (args[0].equalsIgnoreCase("reset"))        { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerRentlandReset(plugin).onCommand(sender, command, label, args); }                    
+                if (args[0].equalsIgnoreCase("time"))         { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerRentlandTime(plugin).onCommand(sender, command, label, args); }                    
                 
                 //Handle commands where the indicator is in the 2nd word
                 //The following 3 are deprecated but left in for compatability
                 if (args.length > 1) {
-                    if (args[1].equalsIgnoreCase("cost"))     { args = plugin.removeItemFromArgs(args, 1); return new BlCommandListenerRentlandCost(plugin).onCommand(sender, command, label, args); }                    
-                    if (args[1].equalsIgnoreCase("reset"))    { args = plugin.removeItemFromArgs(args, 1); return new BlCommandListenerRentlandReset(plugin).onCommand(sender, command, label, args); }                    
-                    if (args[1].equalsIgnoreCase("time"))     { args = plugin.removeItemFromArgs(args, 1); return new BlCommandListenerRentlandTime(plugin).onCommand(sender, command, label, args); }                    
+                    if (args[1].equalsIgnoreCase("cost"))     { args = plugin.arrayRemoveItem(args, 1); return new BlCommandListenerRentlandCost(plugin).onCommand(sender, command, label, args); }                    
+                    if (args[1].equalsIgnoreCase("reset"))    { args = plugin.arrayRemoveItem(args, 1); return new BlCommandListenerRentlandReset(plugin).onCommand(sender, command, label, args); }                    
+                    if (args[1].equalsIgnoreCase("time"))     { args = plugin.arrayRemoveItem(args, 1); return new BlCommandListenerRentlandTime(plugin).onCommand(sender, command, label, args); }                    
                 }
 
                 //Handle commands where the indicator is after the 2nd word

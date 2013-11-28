@@ -38,7 +38,7 @@ public class BlCommandListenerBuylandMemberAdd implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 2) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /buyland addmember [RegionName] [PlayerName]");
         } else {
             //Extract the passed arguments
@@ -53,10 +53,10 @@ public class BlCommandListenerBuylandMemberAdd implements CommandExecutor {
 
                 //See if the player has permission to this command
                 if (player.hasPermission("buyland.buy.addmember") || player.hasPermission("buyland.all")) {
-                    if (plugin.getRentConfig().contains("rent." + argRegionName + ".rentable")) {
+                    if (plugin.rentGetConfig().contains("rent." + argRegionName + ".rentable")) {
                         // can't add a member while region is rentable
                         //TODO: Add more appropriate comment for this 
-                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.rent.error1")));
+                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.rent.error1")));
                     } else {
                         RegionManager regionManager = plugin.getWorldGuard().getRegionManager(world);
                         //Get the protected region
@@ -65,14 +65,14 @@ public class BlCommandListenerBuylandMemberAdd implements CommandExecutor {
                         //Make sure the region exists
                         if (protectedRegion == null) {
                             //Region does not exist.
-                            plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                            plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
                         } else {
                             //Get the current region owners
                             DefaultDomain owners = protectedRegion.getOwners();
                 
                             //See if the player is an owner of the region and has rights to add a member
                             if (!owners.toPlayersString().contains(playerName.toLowerCase())) {
-                                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.sell.dontown")));
+                                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.sell.dontown")));
                             } else {
                                 //Get the members of the region and add the new player name
                                 if (protectedRegion.getMembers().contains(argPlayerName)) {
@@ -90,13 +90,13 @@ public class BlCommandListenerBuylandMemberAdd implements CommandExecutor {
                                     }
     
                                     //Notify the user
-                                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.member.addmember")));
+                                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.member.addmember")));
                                 }
                             }
                         }
                     }
                 } else {
-                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.permission")));
+                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.permission")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

@@ -36,7 +36,7 @@ public class BlCommandListenerAdminLwcRemove implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl lwcRemove [RegionName]");
         } else {
             //Extract the passed arguments
@@ -56,7 +56,7 @@ public class BlCommandListenerAdminLwcRemove implements CommandExecutor {
                     //make sure the region exists
                     if (protectedRegion == null) {
                         //Region does not exist.
-                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
                     } else {
                         //Get protected region min and max locations of the region
                         Location protectedRegionMinimum = new Location(world, 

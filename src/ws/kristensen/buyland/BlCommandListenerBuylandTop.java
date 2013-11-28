@@ -41,7 +41,7 @@ public class BlCommandListenerBuylandTop implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length >= 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /buyland top [Owners/Renters/CashSpent] (Player Qty)");
         } else {
             //Extract the passed arguments
@@ -71,7 +71,7 @@ public class BlCommandListenerBuylandTop implements CommandExecutor {
                             plugin.sendMessageInfo(sender, key + " - " + String.valueOf(result.get(key)) + " regions");
                         }
                     } else if (argType.equalsIgnoreCase("renters")) {
-                        FileConfiguration configRent = plugin.getrentdbConfig();
+                        FileConfiguration configRent = plugin.rentDbGetConfig();
                         HashMap<String, Integer> rankRent = new HashMap<String, Integer>();
                         for (String key : configRent.getKeys(true)) {
                             if (!key.substring(0, 4).equalsIgnoreCase("user") && key.contains(".renting")) rankRent.put(key.substring(0, key.length()-8), configRent.getInt(key));
@@ -85,7 +85,7 @@ public class BlCommandListenerBuylandTop implements CommandExecutor {
                         }
                     } else if (argType.equalsIgnoreCase("cashspent")) {
                         FileConfiguration configOwn = plugin.getCustomConfig();
-                        FileConfiguration configRent = plugin.getrentdbConfig();
+                        FileConfiguration configRent = plugin.rentDbGetConfig();
                         HashMap<String, Double>  rankSpent = new HashMap<String, Double>();
                         for (String key : configOwn.getKeys(true)) {
                             if (!key.substring(0, 4).equalsIgnoreCase("user") && key.contains(".spent")) rankSpent.put(key.substring(0, key.length()-6), configOwn.getDouble(key));
@@ -103,7 +103,7 @@ public class BlCommandListenerBuylandTop implements CommandExecutor {
                         }
                     }
                 } else {
-                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.buy.permission")));
+                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.buy.permission")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

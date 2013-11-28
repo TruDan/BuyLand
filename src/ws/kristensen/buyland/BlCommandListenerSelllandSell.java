@@ -44,13 +44,13 @@ public class BlCommandListenerSelllandSell implements CommandExecutor {
 
                 if (player.hasPermission("buyland.sell") || player.hasPermission("buyland.all")) {
                     //sell the region
-                    if (plugin.sellRegion(player, false,  world, argRegionName)) {
+                    if (plugin.ownSellRegion(player, false,  world, argRegionName)) {
                         //optionally do something when it is sold.
                     } else {
                         //optionally do something if it is unsuccessful.
                     }
                 } else {
-                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.sell.permission")));
+                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.sell.permission")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

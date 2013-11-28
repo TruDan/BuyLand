@@ -43,7 +43,7 @@ public class BlCommandListenerAdminPrice implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length < 2 || args.length > 3) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl price [SaleRegionName] [Cost]");
             plugin.sendMessageInfo(sender, "Usage: /abl price [RentRegionName] [Cost] [Sec/Min/Hr/Day/Wk]");
         } else {
@@ -67,13 +67,9 @@ public class BlCommandListenerAdminPrice implements CommandExecutor {
                     //make sure the region exists
                     if (protectedRegion == null) {
                         //Region does not exist.
-                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
                     } else {
                         if (plugin.isRentRegion(protectedRegion)) {
-                            //TODO: Allow easy adjusting of pricing for rented regions.  
-                            //      Rent pricing would take 1 additional parameter [Sec/Min/Hr/Day/Wk] To indicate what scale the cost arg represents
-                            //      The price would be stored as price per minute, just as it is stored in the config files.
-
                             //Make sure there is a 3rd parameter
                             if (args.length != 3) {
                                 plugin.sendMessageInfo(sender, "Incorrect number of parameters for a rent region.");
@@ -101,8 +97,8 @@ public class BlCommandListenerAdminPrice implements CommandExecutor {
                                     rentCostPerMinute /= 7 * 24 * 60;
                                 }
                                 //Set the cost of the rent for the period of 1 minute
-                                plugin.getRentConfig().set("rent." + argRegionName +".costpermin", rentCostPerMinute);
-                                plugin.saveRentConfig();
+                                plugin.rentGetConfig().set("rent." + argRegionName +".costpermin", rentCostPerMinute);
+                                plugin.rentSaveConfig();
                                 
                                 //Notify the player
                                 plugin.sendMessageInfo(sender, "Rent Price Updated!");

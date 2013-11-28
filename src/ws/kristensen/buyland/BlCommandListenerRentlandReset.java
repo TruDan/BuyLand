@@ -47,7 +47,7 @@ public class BlCommandListenerRentlandReset implements CommandExecutor {
 
             if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")) {    
                 if(args.length != 1) {
-                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
                     plugin.sendMessageInfo(sender, "Usage: /rentland reset [RegionName]");
                 } else {
                     //Extract the passed arguments
@@ -56,12 +56,12 @@ public class BlCommandListenerRentlandReset implements CommandExecutor {
                     doResetRegion = true;
                 }
             } else {
-                plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.rent.noperm")));
+                plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.rent.noperm")));
             }            
         } else {
             //executed from console
             if(args.length != 2) {
-                plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+                plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
                 plugin.sendMessageInfo(sender, "Usage: /rentland reset [RegionName] [WorldOfRegion]");
             } else {
                 //Extract the passed arguments
@@ -86,16 +86,16 @@ public class BlCommandListenerRentlandReset implements CommandExecutor {
             //make sure the region exists
             if (protectedRegion == null) {
                 //Region does not exist
-                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
             } else {
                 //Set the expire time to zero so it is expired
-                plugin.getRentConfig().set("rent." + argRegionName + ".time", 0);
+                plugin.rentGetConfig().set("rent." + argRegionName + ".time", 0);
 
                 //Save the config
-                plugin.saveRentConfig();
+                plugin.rentSaveConfig();
                 
                 //reset the expired region
-                if (plugin.resetExpiredRentedRegion(sender, world, argRegionName)) {
+                if (plugin.rentResetExpiredRegion(sender, world, argRegionName)) {
                     //Notify user it was reset
                     plugin.sendMessageInfo(sender, argRegionName + " has been reset!");
                 } else {
