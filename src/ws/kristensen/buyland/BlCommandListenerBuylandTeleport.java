@@ -33,7 +33,7 @@ public class BlCommandListenerBuylandTeleport implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /buyland tp [RegionName]");
         } else {
             //Extract the passed arguments
@@ -46,9 +46,9 @@ public class BlCommandListenerBuylandTeleport implements CommandExecutor {
                 //See if the player has permission to this command
                 if (player.hasPermission("buyland.tp") || player.hasPermission("buyland.all")) {
                     //see if there is a sign for the requested region
-                    if (plugin.getSignConfig().contains("sign." + argRegionName)) {
+                    if (plugin.signIsDefined(argRegionName)) {
                         //Get the location of the sign
-                        Location tptosign = plugin.stringToLocation(plugin.getSignConfig().getString("sign." + argRegionName));
+                        Location tptosign = plugin.signGetLocation(argRegionName);
 
                         //adjust target so player arrives on top of sign and facing same direction as before.
                         tptosign.add(new Location(tptosign.getWorld(),.5,.5,.5));

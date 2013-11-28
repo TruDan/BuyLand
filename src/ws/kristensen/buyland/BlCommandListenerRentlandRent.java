@@ -33,7 +33,7 @@ public class BlCommandListenerRentlandRent implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 3) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /rentland [RegionName] [TimeQuantity] [Sec/Min/Hr/Day/Wk]");
         } else {
             //Extract the passed arguments
@@ -54,7 +54,7 @@ public class BlCommandListenerRentlandRent implements CommandExecutor {
                         //region not rented or extended
                     }
                 } else {
-                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.rent.noperm")));
+                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.rent.noperm")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

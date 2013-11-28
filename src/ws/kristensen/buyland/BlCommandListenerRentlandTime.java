@@ -35,7 +35,7 @@ public class BlCommandListenerRentlandTime implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /rentland time [RegionName]");
             plugin.sendMessageInfo(sender, "Usage: /rentland [RegionName] time");
         } else {
@@ -50,24 +50,24 @@ public class BlCommandListenerRentlandTime implements CommandExecutor {
                     RegionManager regionManager = plugin.getWorldGuard().getRegionManager(world);
                     if (regionManager.getRegionExact(argRegionName) == null) {
                         //Region does not exist
-                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.error1")));
+                        plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.error1")));
                         //player.sendMessage("args0 " + argRegionName);
                     } else {
-                        if (plugin.getRentConfig().contains("rent." + argRegionName + ".time")) {
-                            long end = plugin.getRentConfig().getLong("rent." + argRegionName + ".time");
+                        if (plugin.rentGetConfig().contains("rent." + argRegionName + ".time")) {
+                            long end = plugin.rentGetConfig().getLong("rent." + argRegionName + ".time");
                             long start = System.currentTimeMillis();
 
                             if (start > end) {
                                 plugin.sendMessageInfo(sender, "Time left for " + argRegionName + ": 0 - This land is rentable!");
                             } else {
-                                plugin.sendMessageInfo(sender, "Time left for " + argRegionName + ": " + BuyLand.elapsedTime(start, end));
+                                plugin.sendMessageInfo(sender, "Time left for " + argRegionName + ": " + BuyLand.elapsedTimeToString(start, end));
                             }
                         } else {
-                            plugin.sendMessageInfo(sender, plugin.getLanguageConfig().getString("buyland.rent.error2"));
+                            plugin.sendMessageInfo(sender, plugin.languageGetConfig().getString("buyland.rent.error2"));
                         }
                     }
                 } else {
-                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.rent.noperm")));
+                    plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.rent.noperm")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

@@ -1,9 +1,8 @@
 name: BuyLand
-version: 0.8.7
+version: 0.8.8
 main: ws.kristensen.buyland.BuyLand
 description: Buy, Sell and Rent WorldGuard Regions
 authors: [The_Nut, chriztopia]
-website: http://chriztopia.com
 depend: [WorldGuard]
 softdepend: [Vault]
 commands:
@@ -80,6 +79,9 @@ permissions:
         default: op
     buyland.admin.list:
         description: List all owned regions for a player.
+        default: op
+    buyland.offlinelimit.exempt:
+        description: Prevent the automatic selling of a region for a player that has not logged in for a set number of days.
         default: op
     buyland.maxland.1:
         description: Max Land Value.

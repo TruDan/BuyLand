@@ -34,7 +34,7 @@ public class BlCommandListenerAdminSave implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl save [RegionName]");
         } else {
             //Extract the passed arguments
@@ -47,13 +47,13 @@ public class BlCommandListenerAdminSave implements CommandExecutor {
                 //See if the player has permission to do the command
                 if (player.hasPermission("buyland.admin") || player.hasPermission("buyland.all")) {    
                     //Get the selected worldedit region
-                    Selection worldEditSelection = BuyLand.getWorldEditSelectionOfPlayer(player);
+                    Selection worldEditSelection = BuyLand.worldEditGetSelectionOfPlayer(player);
                     //make sure we have a player selection
                     if (worldEditSelection == null) {
                         plugin.sendMessageWarning(sender, "Select a worldedit region first.");
                     } else {
                         //Add region to manager
-                        plugin.AddProtectedRegion(worldEditSelection.getMinimumPoint(), worldEditSelection.getMaximumPoint(), argRegionName, "buy", player);
+                        plugin.protectedRegionAdd(worldEditSelection.getMinimumPoint(), worldEditSelection.getMaximumPoint(), argRegionName, "buy", player);
 
                         //Notify player
                         plugin.sendMessageInfo(sender, "Region Added!");

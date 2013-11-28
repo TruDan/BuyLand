@@ -34,7 +34,7 @@ public class BlCommandListenerBuylandBuy implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 1) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /buyland [RegionName]");
         } else {
             //Extract the passed arguments
@@ -47,13 +47,13 @@ public class BlCommandListenerBuylandBuy implements CommandExecutor {
 
                 //See if the player has permission to do the command
                 if (player.hasPermission("buyland.buy") || player.hasPermission("buyland.all")) {
-                    if (plugin.buyRegion(player, world, argRegionName)) {
+                    if (plugin.ownBuyRegion(player, world, argRegionName)) {
                         //purchase was successful
                     } else {
                         //purchase was unsuccessful
                     }
                 } else {
-                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.buy.permission")));
+                    plugin.sendMessageInfo(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.buy.permission")));
                 }
             } else {
                 plugin.sendMessageInfo(sender, "Currently not available at console.");

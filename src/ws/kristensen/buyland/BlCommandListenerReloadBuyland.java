@@ -32,14 +32,14 @@ public class BlCommandListenerReloadBuyland implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length != 0) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /reloadbuyland");
         } else {
             //is the requester allowed to reload
             boolean allowReload = false;
 
             //set default return message
-            String returnMessage = ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.permission"));
+            String returnMessage = ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.permission"));
 
             //see if requester is a player
             if (sender instanceof Player) {
@@ -58,12 +58,12 @@ public class BlCommandListenerReloadBuyland implements CommandExecutor {
             if (allowReload) {
                 plugin.reloadConfig();  
                 plugin.reloadCustomConfig();
-                plugin.reloadLanguageConfig();
-                plugin.reloadRentConfig();
-                plugin.reloadrentdbConfig();
-                plugin.reloadSignConfig();
+                plugin.languageReloadConfig();
+                plugin.rentReloadConfig();
+                plugin.rentDbReloadConfig();
+                plugin.signReloadConfig();
                 
-                returnMessage = ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.reload"));
+                returnMessage = ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.reload"));
             }
 
             //send the message

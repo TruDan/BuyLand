@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
  *      /adminbuyland lwcremove [Region Name]<br/>
  *      /adminbuyland reset [Region Name]<br/>
  *      /adminbuyland flags<br/>
+ *      /adminbuyland signfix<br/>
  * <hr/>
  * This will redirect to the class that handles the specific sub-command.<br/>
  * <br/> 
@@ -45,13 +46,14 @@ public class BlCommandListenerAdmin implements CommandExecutor {
             if (args.length > 0) {
                 //capture the first argument so we know where to redirect
                 String arg = args[0];
-                if (arg.equalsIgnoreCase("forsale"))   { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminForSale(plugin).onCommand(sender, command, label, args); }
-                if (arg.equalsIgnoreCase("list"))      { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminList(plugin).onCommand(sender, command, label, args); }
-                if (arg.equalsIgnoreCase("lwcremove")) { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminLwcRemove(plugin).onCommand(sender, command, label, args); }
-                if (arg.equalsIgnoreCase("price"))     { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminPrice(plugin).onCommand(sender, command, label, args); }
-                if (arg.equalsIgnoreCase("reset"))     { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminReset(plugin).onCommand(sender, command, label, args); }
-                if (arg.equalsIgnoreCase("save"))      { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminSave(plugin).onCommand(sender, command, label, args); }
-                if (arg.equalsIgnoreCase("flags"))     { args = plugin.removeItemFromArgs(args, 0); return new BlCommandListenerAdminFlags(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("forsale"))   { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminForSale(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("list"))      { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminList(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("lwcremove")) { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminLwcRemove(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("price"))     { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminPrice(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("reset"))     { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminReset(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("save"))      { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminSave(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("flags"))     { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminFlags(plugin).onCommand(sender, command, label, args); }
+                if (arg.equalsIgnoreCase("signfix"))   { args = plugin.arrayRemoveItem(args, 0); return new BlCommandListenerAdminSignFix(plugin).onCommand(sender, command, label, args); }
                 //See BlCommandListenerRentland for /rentland save [region_name] command
                 //See BlCommandListenerRentland for /rentland [region_name] reset command
             } else {
@@ -77,6 +79,8 @@ public class BlCommandListenerAdmin implements CommandExecutor {
             plugin.sendMessageInfo(sender, "/abl list [PlayerName] - Lists Owned region of player.", false);
             plugin.sendMessageInfo(sender, "/abl lwcremove [RegionName] - Removes LWC Protections for the region.", false);
             plugin.sendMessageInfo(sender, "/abl reset [RegionName] - Resets buyable region.", false);  
+            plugin.sendMessageInfo(sender, "/abl flags [RegionName] - Display available WorldGuard flags.", false);  
+            plugin.sendMessageInfo(sender, "/abl reset [RegionName] - Redraws buyland signs because of config change.", false);  
             plugin.sendMessageInfo(sender, "/rentland save [RegionName] - Select with WorldEdit first.", false);  
             plugin.sendMessageInfo(sender, "/rentland reset [RegionName] - Reset rentable region.", false);
         }

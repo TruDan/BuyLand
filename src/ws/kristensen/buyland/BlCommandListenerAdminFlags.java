@@ -4,6 +4,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import com.sk89q.worldguard.protection.flags.BooleanFlag;
@@ -11,7 +12,6 @@ import com.sk89q.worldguard.protection.flags.DefaultFlag;
 import com.sk89q.worldguard.protection.flags.DoubleFlag;
 import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.IntegerFlag;
-import com.sk89q.worldguard.protection.flags.RegionGroupFlag;
 import com.sk89q.worldguard.protection.flags.SetFlag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.flags.StringFlag;
@@ -19,8 +19,6 @@ import com.sk89q.worldguard.protection.flags.VectorFlag;
 
 /**
 * Command to show info about all of WorldGuard's flags, or all flags in a preset.
-*
-* @author Mitch
 *
 */
 public class BlCommandListenerAdminFlags implements CommandExecutor {
@@ -41,7 +39,7 @@ public class BlCommandListenerAdminFlags implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(args.length != 0) {
-            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.getLanguageConfig().getString("buyland.general.parameters")));
+            plugin.sendMessageWarning(sender, ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.general.parameters")));
             plugin.sendMessageInfo(sender, "Usage: /abl Flags");
         } else {
             //See if the person requesting the information is a player
@@ -55,7 +53,13 @@ public class BlCommandListenerAdminFlags implements CommandExecutor {
 
                     for (int i = 0; i < totalItems; i++) {
                         Flag<?> flag = DefaultFlag.flagsList[i];
-                        plugin.sendMessageInfo(sender, "" + (i + 1) + ". " + flag.getName() + ": " + getFlagDescription(flag));
+                        if (flag instanceof StateFlag ||
+                            (flag instanceof BooleanFlag && !flag.getName().equals("buyable")) ||
+                            (flag instanceof SetFlag && flag.getName().equals("deny-spawn")) ||
+                            flag.getName().equals("game-mode")
+                           ) {
+                            plugin.sendMessageInfo(sender, "" + (i + 1) + ". " + flag.getName() + ": " + getFlagDescription(flag));
+                        }
                     }
                 }
             }
@@ -64,18 +68,38 @@ public class BlCommandListenerAdminFlags implements CommandExecutor {
         return true;
     }
     public String getFlagDescription(Flag<?> flag) {
-        if (flag instanceof StateFlag) { return "allow/deny"; }
-        else if (flag instanceof SetFlag && flag.getName() == "deny-spawn") { return "comma seperated creature names"; }
+        if (flag instanceof StateFlag) { return getStateFlagValues(); }
+        else if (flag instanceof SetFlag && flag.getName() == "deny-spawn") { return getCreatureValues(); }
         else if (flag instanceof StringFlag) { return "String of words"; }
-        else if (flag instanceof BooleanFlag) { return "true/false"; }
+        else if (flag instanceof BooleanFlag) { return "TRUE/FALSE"; }
         else if (flag instanceof IntegerFlag) { return "number: 1"; }
         else if (flag instanceof DoubleFlag) { return "number:1.0"; }
         else if (flag instanceof SetFlag) { return "comma seperated list"; }
         else if (flag instanceof VectorFlag) { return "comma seperated coordinates"; }
-        else if (flag instanceof RegionGroupFlag) { return "members/owners/nonmembers/nonowners"; }
         else if (flag.getName().equals("spawn")) { return "worldName, x,y,z"; }
         else if (flag.getName().equals("teleport")) { return "worldName, x,y,z"; }
-        else if (flag.getName().equals("game-mode")) { return "adventure/creative/survival"; }
+        else if (flag.getName().equals("game-mode")) { return getGameModeValues(); }
         return "unknown";
+    }
+    public String getStateFlagValues(){
+        String returnValue = "";
+        for (StateFlag.State flag: StateFlag.State.values()) {
+            returnValue += flag.name() + "/";
         }
+        return returnValue.substring(0, returnValue.length()-1);
+    }
+    public String getGameModeValues(){
+        String returnValue = "";
+        for (org.bukkit.GameMode flag: org.bukkit.GameMode.values()) {
+            returnValue += flag.name() + "/";
+        }
+        return returnValue.substring(0, returnValue.length()-1);
+    }
+    public String getCreatureValues(){
+        String returnValue = "";
+        for (EntityType flag: EntityType.values()) {
+            returnValue += flag.name() + "/";
+        }
+        return returnValue.substring(0, returnValue.length()-1);
+    }
 }
