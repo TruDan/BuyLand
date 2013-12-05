@@ -57,11 +57,11 @@ public class BlEventListenerPlayerJoin extends JavaPlugin implements Listener  {
 		String playerNameLowerCase = playerName.toLowerCase();
 		
 		//Add the player to the CustomConfig
-        plugin.getCustomConfig().addDefault(playerNameLowerCase + ".own", 0);
-        plugin.getCustomConfig().addDefault(playerNameLowerCase + ".earned", 0.00);
-        plugin.getCustomConfig().addDefault(playerNameLowerCase + ".spent", 0.00);
-		plugin.getCustomConfig().options().copyDefaults(true);
-		plugin.saveCustomConfig();
+        plugin.customGetConfig().addDefault(playerNameLowerCase + ".own", 0);
+        plugin.customGetConfig().addDefault(playerNameLowerCase + ".earned", 0.00);
+        plugin.customGetConfig().addDefault(playerNameLowerCase + ".spent", 0.00);
+		plugin.customGetConfig().options().copyDefaults(true);
+		plugin.customSaveConfig();
 		
 
 		//Add the player to the rentDbConfig

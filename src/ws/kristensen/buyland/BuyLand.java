@@ -138,39 +138,75 @@ public class BuyLand extends JavaPlugin {
             if (signConfigFile == null) {
                 signConfigFile = new File(getDataFolder(), "signs.yml");
             }
+            
+            //Load the config file
+            signConfig = YamlConfiguration.loadConfiguration(signConfigFile);
+            
+            //Make sure it is on the correct version
             this.signUpdateSettingsVersion();
+            
+            //Reload it so we can make sure the signMap is updated
             this.signReloadConfig();
-            //make sure this option is set
-            signConfig.options().copyDefaults(true);
         }
         return signConfig;
     }
     private void signUpdateSettingsVersion() {
-        sendMessageInfo(null, signConfigFile.getName());
-        signConfig = YamlConfiguration.loadConfiguration(signConfigFile);
-        //see if it is the original style of the config
-        if (signConfig.getString("sign.placeholder.location") == null) {
-            sendMessageInfo(null, "sign - need to fix");
-
-            signConfig.set("general.configVersion", "2");
-
-            //Get the sign config section from the file
-            ConfigurationSection signConfigSection = signConfig.getConfigurationSection("sign");
-            //get each sign and fix it.
-            for (String key : signConfigSection.getKeys(false)) {
-                //save the location string
-                String location = signConfigSection.getString(key);
-                //remove the old style key
-                signConfigSection.set(key, null);
-                //add the new structure
-                signConfigSection.set("sign." + key + ".location", location);
-                signConfigSection.set("sign." + key + ".state", "default");
+        //See if there is even a config to update
+        if (signConfig != null) {
+            //set flag so we only save once at the end.
+            boolean needToSave = false;
+            
+            //see if it is the original style of the config
+            if (signConfig.getString("general.configVersion") == null) {
+                //we have an older version of the file, so do the update to version 2
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                signConfig.set("general.configVersion", 2);
+                
+                //Make sure we have a header in our yml file
+                if (signConfig.options().header() == null) {
+                    //set the header 
+                    signConfig.options().header("BuyLand Sign DB File. Used to keep track of signs.");
+                }
+                
+                //extract the sign section
+                ConfigurationSection signConfigSection = signConfig.getConfigurationSection("sign");
+                
+                //make sure it exists
+                if (signConfigSection == null) {
+                    //we have a brand new file create the base structure
+                    signConfig.set("sign.placeholder.location", "location");
+                    signConfig.set("sign.placeholder.state", "default");
+                    signConfig.set("sign.placeholder.inactiveexempt", false);
+                }
+                if (signConfigSection != null) {
+                    //if placeholder.location exists now, then we have a new file, do nothing
+                    if (signConfigSection.getString("placeholder.location") == null) {
+                        //we have an older config file, not a new one, so get each sign and fix it
+                        for (String key : signConfigSection.getKeys(false)) {
+                            //save the location string
+                            String location = signConfigSection.getString(key);
+                            //remove the old style key
+                            signConfigSection.set(key, null);
+                            //add the new structure
+                            signConfigSection.set(key + ".location", location);
+                            signConfigSection.set(key + ".state", "default");                            
+                            signConfigSection.set(key + ".inactiveexempt", false);                            
+                        }
+                    }
+                }
             }
-            signSaveConfig();
-        } else {
-            sendMessageInfo(null, "sign - no need to fix");
+            if (signConfig.getString("general.configVersion").equals("2")) {
+                //For now, do nothing, but this space is reserved for future updates.
+                //when there is a version 3, then set the version first
+            }
+            
+            if (needToSave) {
+                signSaveConfig();
+            }
         }
-
     }
     public void signReloadConfig() {
         signConfig = YamlConfiguration.loadConfiguration(signConfigFile);
@@ -180,14 +216,8 @@ public class BuyLand extends JavaPlugin {
         if (defConfigStream != null) {
             YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
             signConfig.setDefaults(defConfig);
+            signConfig.options().copyDefaults(true);
         }
-        
-        //Make sure the minimum settings in the file are there with these defaults
-        signConfig.options().header("BuyLand Sign DB File. Used to keep track of signs.");
-
-        signConfig.addDefault("sign.placeholder.location", "here");
-        signConfig.addDefault("sign.placeholder.state", "FOR_SALE");
-        signConfig.addDefault("sign.placeholder.inactiveexempt", false);
         
         //Add each of the signs to the Hash for easy lookup.  format: location = regionName:state
         signsMap.clear();
@@ -208,41 +238,89 @@ public class BuyLand extends JavaPlugin {
         }
     }
 
-    public FileConfiguration getCustomConfig() {
+    public FileConfiguration customGetConfig() {
         if (customConfig == null) {
-            this.reloadCustomConfig();
-            //make sure this option is set
-            customConfig.options().copyDefaults(true);
+            if (customConfigFile == null) {
+                customConfigFile = new File(getDataFolder(), "db.yml");
+            }
+            
+            //Load the config file
+            customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
+
+            //Make sure it is on the correct version
+            this.customUpdateSettingsVersion();
+            
+            //Reload it so we can make sure our settings are updated
+            this.customReloadConfig();
         }
         return customConfig;
     }
-    public void reloadCustomConfig() {
-        if (customConfigFile == null) {
-            customConfigFile = new File(getDataFolder(), "db.yml");
+    private void customUpdateSettingsVersion() {
+        //See if there is even a config to update
+        if (customConfig != null) {
+            //set flag so we only save once at the end.
+            boolean needToSave = false;
+            
+            //see if it is the original style of the config
+            if (customConfig.getString("general.configVersion") == null) {
+                //we have an older version of the file, so do the update to version 2
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                customConfig.set("general.configVersion", 2);
+                
+                //Make sure we have a header in our yml file
+                if (customConfig.options().header() == null) {
+                    //set the header 
+                    customConfig.options().header("BuyLand DB File. Used to keep track of BuyLand specific user information.");
+                }
+                
+                
+                if (customConfig.getString("user.own") == null) {
+                    //we have an older config file, not a new one, so get each region and fix it
+                    for (String key : customConfig.getKeys(false)) {
+                        if (!key.equalsIgnoreCase("general") && customConfig.getString(key) != null) {
+                            //save the current count
+                            int value = customConfig.getInt(key);
+                            //remove the old style key
+                            customConfig.set(key, null);
+                            //add the new structure
+                            customConfig.set(key + ".own", value);
+                            customConfig.set(key + ".earned", 0.00);
+                            customConfig.set(key + ".spent", 0.00);
+                        }
+                    }
+                }
+            }
+            if (customConfig.getString("general.configVersion").equals("2")) {
+                //For now, do nothing, but this space is reserved for future updates.
+                //when there is a version 3, then set the version first
+            }
+
+            if (needToSave) {
+                customSaveConfig();
+            }
         }
+    }
+    public void customReloadConfig() {
         customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
-     
+        
         // Look for defaults in the jar
         InputStream defConfigStream = this.getResource("db.yml");
         if (defConfigStream != null) {
             YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
             customConfig.setDefaults(defConfig);
+            customConfig.options().copyDefaults(true);
         }
-        
-        //Make sure the minimum settings in the file are there with these defaults
-        customConfig.options().header("BuyLand DB File. Used for keeping track of how many plots a user has.");
-
-        customConfig.addDefault("user.own", 0);
-        customConfig.addDefault("user.earned", 0.00);
-        customConfig.addDefault("user.spent", 0.00);
     }
-    public void saveCustomConfig() {
+    public void customSaveConfig() {
         if (customConfig == null || customConfigFile == null) {
             return;
         }
         
         try {
-            getCustomConfig().save(customConfigFile);
+            customGetConfig().save(customConfigFile);
         } catch (IOException ex) {
             this.getLogger().log(Level.SEVERE, "Could not save config to " + customConfigFile, ex);
         }
@@ -250,16 +328,153 @@ public class BuyLand extends JavaPlugin {
 
     public FileConfiguration languageGetConfig() {
         if (languageConfig == null) {
+            if (languageConfigFile == null) {
+                languageConfigFile = new File(getDataFolder(), "language.yml");
+            }
+            
+            //Load the config file
+            languageConfig = YamlConfiguration.loadConfiguration(languageConfigFile);
+            
+            //Make sure it is on the correct version
+            this.languageUpdateSettingVersion();
+            
+            //Reload it so we can make sure our settings are updated
             this.languageReloadConfig();
-            //make sure this option is set
-            languageConfig.options().copyDefaults(true);
         }
         return languageConfig;
     }
-    public void languageReloadConfig() {
-        if (languageConfigFile == null) {
-        	languageConfigFile = new File(getDataFolder(), "language.yml");
+    private void languageUpdateSettingVersion() {
+        //See if there is even a config to update
+        if (languageConfig != null) {
+            //set flag so we only save once at the end.
+            boolean needToSave = false;
+            
+            //see if it is the original style of the config
+            if (languageConfig.getString("general.configVersion") == null) {
+                //we have an older version of the file, so do the update to original version 1
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                languageConfig.set("general.configVersion", 1);
+                
+                //Make sure the minimum settings in the file are there with these defaults
+                languageConfig.options().header("BuyLand Language File.");
+
+                languageConfig.addDefault("buyland.general.permission", "You do not have permission for that command.");   
+                languageConfig.addDefault("buyland.general.reload", "Config reloaded!");
+                languageConfig.addDefault("buyland.general.error1", "Error! Region name was incorrect.");
+                languageConfig.addDefault("buyland.general.error2", "Error! Enter a Number/Price.");
+
+                languageConfig.addDefault("buyland.admin.forsale", "This Region has been placed back for sale.");
+
+                languageConfig.addDefault("buyland.rent.forrent", "This land is for rent!");
+                languageConfig.addDefault("buyland.rent.noperm", "You dont have permission to do that!");
+                languageConfig.addDefault("buyland.rent.tenant", "This land currently has a tenant - Time left: ");
+                languageConfig.addDefault("buyland.rent.rentby", "This land is being rented by ");
+                languageConfig.addDefault("buyland.rent.notbe", "This land can not be rented.");
+                languageConfig.addDefault("buyland.rent.cantafford", "%s to rent the land.");
+                languageConfig.addDefault("buyland.rent.error1", "Sorry Rentable land can not be bought nor sold.");
+                languageConfig.addDefault("buyland.rent.error2", "Sorry this region is not rentable.");
+                languageConfig.addDefault("buyland.rent.max", "You have rented the Maximum amount of land allowed.");
+
+                languageConfig.addDefault("buyland.sell.forsale", "This land is for sale.");
+                languageConfig.addDefault("buyland.sell.back1", "You have sold back the land for ");
+                languageConfig.addDefault("buyland.sell.back2", ". Your balance is: %s");
+                languageConfig.addDefault("buyland.sell.dontown", "You do not own this land!");
+                languageConfig.addDefault("buyland.sell.notsneak", "You must be sneaking when you click a sign to sell land!");
+
+                languageConfig.addDefault("buyland.member.removemember", "Removed Member!");
+                languageConfig.addDefault("buyland.member.addmember", "Added Member!");
+                
+                languageConfig.addDefault("buyland.buy.max", "You have bought the Maximum amount of land allowed.");
+                languageConfig.addDefault("buyland.buy.welcome1", "Welcome to ");
+                languageConfig.addDefault("buyland.buy.welcome2", "`s Land!");
+                languageConfig.addDefault("buyland.buy.cantafford", "%s to buy the land.");
+                languageConfig.addDefault("buyland.buy.bought", "You bought the land for %s and you now have %s");
+                languageConfig.addDefault("buyland.buy.dontown", "Sorry this land is not buyable.");
+                
+                languageConfig.addDefault("buyland.price.price", "You currently have %s to purchase this land.");
+                languageConfig.addDefault("buyland.price.cost", "This land is buyable and costs: ");
+                languageConfig.addDefault("buyland.price.max1", "You have ");
+                languageConfig.addDefault("buyland.price.max2", " pieces of land. The Max is ");
+                languageConfig.addDefault("buyland.price.dontown", "Sorry this land is not buyable.");
+
+                languageConfig.options().copyDefaults(true);
+            }
+            if (languageConfig.getString("general.configVersion").equals("1")) {
+                //we have an older version of the file, so do the update to version 2
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                languageConfig.set("general.configVersion", 2);
+                
+                languageConfig.addDefault("buyland.general.parameters", "Incorrect number of parameters.");
+
+                languageConfig.addDefault("buyland.buy.permission", "You do not have permission to buy a region.");
+
+                languageConfig.options().copyDefaults(true);
+            }
+            if (languageConfig.getString("general.configVersion").equals("2")) {
+                //we have an older version of the file, so do the update to version 3
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                languageConfig.set("general.configVersion", 3);
+                
+                languageConfig.addDefault("buyland.rent.price", "The cost to rent this region for 1 %s is: %s");
+                languageConfig.addDefault("buyland.rent.notsneak", "Sneak right-click the sign to rent the land.");
+
+                languageConfig.addDefault("buyland.sell.permission", "You do not have permission to sell a region.");
+
+
+                languageConfig.addDefault("buyland.flag.cantafford", "%s to buy the region flag.");
+                languageConfig.addDefault("buyland.flag.buy", "You bought the flag for %s. Your balance is: %s");
+                languageConfig.addDefault("buyland.flag.sell", "You have sold the flag for %s. Your balance is: %s");
+                
+                languageConfig.addDefault("buyland.sign.instructions.header", "Sign Instructions:");
+                
+                languageConfig.addDefault("buyland.sign.instructions.forsale.left", "left-click break sign with rights.");
+                languageConfig.addDefault("buyland.sign.instructions.forsale.right", "right-click does nothing.");
+                languageConfig.addDefault("buyland.sign.instructions.forsale.sneakleft", "sneak left-click does nothing.");
+                languageConfig.addDefault("buyland.sign.instructions.forsale.sneakright", "sneak right-click to buy region.");
+                
+                languageConfig.addDefault("buyland.sign.instructions.own.left", "left-click break sign with rights.");
+                languageConfig.addDefault("buyland.sign.instructions.own.right", "right-click does nothing.");
+                languageConfig.addDefault("buyland.sign.instructions.own.sneakleft", "sneak left-click view flag options.");
+                languageConfig.addDefault("buyland.sign.instructions.own.sneakright", "sneak right-click to sell region.");
+                
+                languageConfig.addDefault("buyland.sign.instructions.forrent.left", "left-click break sign with rights.");
+                languageConfig.addDefault("buyland.sign.instructions.forrent.right", "right-click to cycle through time frames.");
+                languageConfig.addDefault("buyland.sign.instructions.forrent.sneakleft", "sneak left-click does nothing");
+                languageConfig.addDefault("buyland.sign.instructions.forrent.sneakright", "sneak right-click to rent region.");
+                
+                languageConfig.addDefault("buyland.sign.instructions.rent.left", "left-click break sign with rights.");
+                languageConfig.addDefault("buyland.sign.instructions.rent.right", "right-click to cycle through time frames.");
+                languageConfig.addDefault("buyland.sign.instructions.rent.sneakleft", "sneak left-click view flag options.");
+                languageConfig.addDefault("buyland.sign.instructions.rent.sneakright", "sneak right-click to extend rent.");
+                
+                languageConfig.addDefault("buyland.sign.instructions.flags.left", "left-click to view region flags options.");
+                languageConfig.addDefault("buyland.sign.instructions.flags.right", "right-click to view available region flags.");
+                languageConfig.addDefault("buyland.sign.instructions.flags.sneakleft", "sneak left-click to exit flag options.");
+                languageConfig.addDefault("buyland.sign.instructions.flags.sneakright", "sneak right-click to toggle flag option.");
+
+                languageConfig.addDefault("buyland.sign.break.adminonly", "Only an admin or with permission can break this sign.");
+                languageConfig.addDefault("buyland.sign.break.notowner", "Only an admin or the owner can break this sign.");
+            }
+            if (languageConfig.getString("general.configVersion").equals("3")) {
+                //we have an older version of the file, so do the update to version 4
+                //do nothing for now.
+            }
+
+            if (needToSave) {
+                languageSaveConfig();
+            }
         }
+    }
+    public void languageReloadConfig() {
         languageConfig = YamlConfiguration.loadConfiguration(languageConfigFile);
      
         // Look for language file in the jar
@@ -267,96 +482,8 @@ public class BuyLand extends JavaPlugin {
         if (defConfigStream != null) {
             YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
             languageConfig.setDefaults(defConfig);
+            languageConfig.options().copyDefaults(true);
         }
-
-        //Make sure the minimum settings in the file are there with these defaults
-        languageConfig.options().header("BuyLand Language File.");
-
-        languageConfig.addDefault("buyland.general.permission", "You do not have permission for that command.");   
-        languageConfig.addDefault("buyland.general.reload", "Config reloaded!");
-        languageConfig.addDefault("buyland.general.error1", "Error! Region name was incorrect.");
-        languageConfig.addDefault("buyland.general.error2", "Error! Enter a Number/Price.");
-        languageConfig.addDefault("buyland.general.parameters", "Incorrect number of parameters.");
-
-        languageConfig.addDefault("buyland.admin.forsale", "This Region has been placed back for sale.");
-
-        languageConfig.addDefault("buyland.rent.forrent", "This land is for rent!");
-        languageConfig.addDefault("buyland.rent.noperm", "You dont have permission to do that!");
-        languageConfig.addDefault("buyland.rent.tenant", "This land currently has a tenant - Time left: ");
-        languageConfig.addDefault("buyland.rent.rentby", "This land is being rented by ");
-        languageConfig.addDefault("buyland.rent.notbe", "This land can not be rented.");
-        languageConfig.addDefault("buyland.rent.cantafford", "%s to rent the land.");
-        languageConfig.addDefault("buyland.rent.error1", "Sorry Rentable land can not be bought nor sold.");
-        languageConfig.addDefault("buyland.rent.error2", "Sorry this region is not rentable.");
-        languageConfig.addDefault("buyland.rent.max", "You have rented the Maximum amount of land allowed.");
-        languageConfig.addDefault("buyland.rent.price", "The cost to rent this region for 1 %s is: %s");
-        languageConfig.addDefault("buyland.rent.notsneak", "Sneak right-click the sign to rent the land.");
-
-        languageConfig.addDefault("buyland.sell.forsale", "This land is for sale.");
-        languageConfig.addDefault("buyland.sell.back1", "You have sold back the land for ");
-        languageConfig.addDefault("buyland.sell.back2", ". Your balance is: %s");
-        languageConfig.addDefault("buyland.sell.dontown", "You do not own this land!");
-        languageConfig.addDefault("buyland.sell.notsneak", "You must be sneaking when you right-click a sign to sell land!");
-        languageConfig.addDefault("buyland.sell.permission", "You do not have permission to sell a region.");
-        languageConfig.addDefault("buyland.sell.instructions.line1", "Sign Instructions:");
-        languageConfig.addDefault("buyland.sell.instructions.line2", "sneak right-click to buy region.");
-
-        languageConfig.addDefault("buyland.member.removemember", "Removed Member!");
-        languageConfig.addDefault("buyland.member.addmember", "Added Member!");
-        
-        languageConfig.addDefault("buyland.buy.max", "You have bought the Maximum amount of land allowed.");
-        languageConfig.addDefault("buyland.buy.welcome1", "Welcome to ");
-        languageConfig.addDefault("buyland.buy.welcome2", "`s Land!");
-        languageConfig.addDefault("buyland.buy.cantafford", "%s to buy the land.");
-        languageConfig.addDefault("buyland.buy.permission", "You do not have permission to buy a region.");
-        languageConfig.addDefault("buyland.buy.notsneak", "Sneak right-click the sign to buy the land.");
-        languageConfig.addDefault("buyland.buy.bought", "You bought the land for %s and you now have %s");
-        languageConfig.addDefault("buyland.buy.dontown", "Sorry this land is not buyable.");
-        
-        languageConfig.addDefault("buyland.price.price", "You currently have %s to purchase this land.");
-        languageConfig.addDefault("buyland.price.cost", "This land is buyable and costs: ");
-        languageConfig.addDefault("buyland.price.max1", "You have ");
-        languageConfig.addDefault("buyland.price.max2", " pieces of land. The Max is ");
-        languageConfig.addDefault("buyland.price.dontown", "Sorry this land is not buyable.");
-        
-        languageConfig.addDefault("buyland.flag.cantafford", "%s to buy the region flag.");
-        languageConfig.addDefault("buyland.flag.buy", "You bought the flag for %s. Your balance is: %s");
-        languageConfig.addDefault("buyland.flag.sell", "You have sold the flag for %s. Your balance is: %s");
-        languageConfig.addDefault("buyland.flag.instructions.line1", "Sign Instructions:");
-        languageConfig.addDefault("buyland.flag.instructions.line2", "right-click to view available region flags.");
-        languageConfig.addDefault("buyland.flag.instructions.line3", "left-click to view region flags options.");
-        languageConfig.addDefault("buyland.flag.instructions.line4", "sneak right-click to toggle flag option.");
-        languageConfig.addDefault("buyland.flag.instructions.line5", "sneak left-click to exit flag options.");
-        
-        languageConfig.addDefault("buyland.sign.instructions.header", "Sign Instructions:");
-        
-        languageConfig.addDefault("buyland.sign.instructions.forsale.left", "left-click break sign with rights.");
-        languageConfig.addDefault("buyland.sign.instructions.forsale.right", "right-click does nothing.");
-        languageConfig.addDefault("buyland.sign.instructions.forsale.sneakleft", "sneak left-click does nothing.");
-        languageConfig.addDefault("buyland.sign.instructions.forsale.sneakright", "sneak right-click to buy region.");
-        
-        languageConfig.addDefault("buyland.sign.instructions.own.left", "left-click break sign with rights.");
-        languageConfig.addDefault("buyland.sign.instructions.own.right", "right-click does nothing.");
-        languageConfig.addDefault("buyland.sign.instructions.own.sneakleft", "sneak left-click view flag options.");
-        languageConfig.addDefault("buyland.sign.instructions.own.sneakright", "sneak right-click to sell region.");
-        
-        languageConfig.addDefault("buyland.sign.instructions.forrent.left", "left-click break sign with rights.");
-        languageConfig.addDefault("buyland.sign.instructions.forrent.right", "right-click to cycle through time frames.");
-        languageConfig.addDefault("buyland.sign.instructions.forrent.sneakleft", "sneak left-click does nothing");
-        languageConfig.addDefault("buyland.sign.instructions.forrent.sneakright", "sneak right-click to rent region.");
-        
-        languageConfig.addDefault("buyland.sign.instructions.rent.left", "left-click break sign with rights.");
-        languageConfig.addDefault("buyland.sign.instructions.rent.right", "right-click to cycle through time frames.");
-        languageConfig.addDefault("buyland.sign.instructions.rent.sneakleft", "sneak left-click view flag options.");
-        languageConfig.addDefault("buyland.sign.instructions.rent.sneakright", "sneak right-click to extend rent.");
-        
-        languageConfig.addDefault("buyland.sign.instructions.flags.left", "left-click to view region flags options.");
-        languageConfig.addDefault("buyland.sign.instructions.flags.right", "right-click to view available region flags.");
-        languageConfig.addDefault("buyland.sign.instructions.flags.sneakleft", "sneak left-click to exit flag options.");
-        languageConfig.addDefault("buyland.sign.instructions.flags.sneakright", "sneak right-click to toggle flag option.");
-
-        languageConfig.addDefault("buyland.sign.break.adminonly", "Only an admin or with permission can break this sign.");
-        languageConfig.addDefault("buyland.sign.break.notowner", "Only an admin or the owner can break this sign.");
     }
     public void languageSaveConfig() {
         if (languageConfig == null || languageConfigFile == null) {
@@ -372,16 +499,69 @@ public class BuyLand extends JavaPlugin {
 
     public FileConfiguration rentGetConfig() {
         if (rentConfig == null) {
+            if (rentConfigFile == null) {
+                rentConfigFile = new File(getDataFolder(), "rent.yml");
+            }
+            
+            //load the config file
+            rentConfig = YamlConfiguration.loadConfiguration(rentConfigFile);
+            
+            //Make sure it is on the correct version
+            this.rentUpdateSettingsVersion();
+            
+            //Reload it so we can make sure our settings are updated
             this.rentReloadConfig();
-            //make sure this option is set
-            rentConfig.options().copyDefaults(true);
         }
         return rentConfig;
     }
-    public void rentReloadConfig() {
-        if (rentConfigFile == null) {
-            rentConfigFile = new File(getDataFolder(), "rent.yml");
+    private void rentUpdateSettingsVersion() {
+        //See if there is even a config to update
+        if (rentConfig != null) {
+            //set flag so we only save once at the end.
+            boolean needToSave = false;
+            
+            //see if it is the original style of the config
+            if (rentConfig.getString("general.configVersion") == null) {
+                //we have an older version of the file, so do the update to version 2
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                rentConfig.set("general.configVersion", 2);
+                
+                //Make sure we have a header in our yml file
+                if (rentConfig.options().header() == null) {
+                    //set the header 
+                    rentConfig.options().header("BuyLand rent file.  Used to keep track of regions rented by players.");
+                }
+
+                //extract the rent section
+                ConfigurationSection rentConfigSection = rentConfig.getConfigurationSection("rent");
+                
+                //make sure it exists
+                if (rentConfigSection == null) {
+                    //we have a brand new file create the base structure
+                    rentConfig.set("rent.placeholder.time", 0);
+                    rentConfig.set("rent.placeholder.rentable", true);
+                    rentConfig.set("rent.placeholder.world", "world");
+                    rentConfig.set("rent.placeholder.costpermin", 1.0);        
+                   
+                }
+                if (rentConfigSection != null) {
+                    //do nothing since it has not changed.
+                }
+            }
+            if (rentConfig.getString("general.configVersion").equals("2")) {
+                //For now, do nothing, but this space is reserved for future updates.
+                //when there is a version 3, then set the version first
+            }
+
+            if (needToSave) {
+                rentSaveConfig();
+            }
         }
+    }
+    public void rentReloadConfig() {
         rentConfig = YamlConfiguration.loadConfiguration(rentConfigFile);
      
         // Look for defaults in the jar
@@ -389,15 +569,8 @@ public class BuyLand extends JavaPlugin {
         if (defConfigStream != null) {
             YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
             rentConfig.setDefaults(defConfig);
+            rentConfig.options().copyDefaults(true);
         }
-        
-        //Make sure the minimum settings in the file are there with these defaults
-        rentConfig.options().header("Rent File");
-
-        rentConfig.addDefault("rent.placeholder.time", 0);
-        rentConfig.addDefault("rent.placeholder.rentable", true);
-        rentConfig.addDefault("rent.placeholder.world", "world");
-        rentConfig.addDefault("rent.placeholder.costpermin", 1.0);
     }
     public void rentSaveConfig() {
         if (rentConfig == null || rentConfigFile == null) {
@@ -413,17 +586,80 @@ public class BuyLand extends JavaPlugin {
 
     public FileConfiguration rentDbGetConfig() {
         if (rentDbConfig == null) {
+            if (rentDbConfigFile == null) {
+                rentDbConfigFile = new File(getDataFolder(), "rentdb.yml");
+            }
+            
+            //load the config file
+            rentDbConfig = YamlConfiguration.loadConfiguration(rentDbConfigFile);
+            
+            //Make sure it is on the correct version
+            this.rentDbUpdateSettingsVersion();
+            
+            //Reload it so we can make sure our settings are updated
             this.rentDbReloadConfig();
         }
-        //make sure this option is set
-        rentDbConfig.options().copyDefaults(true);
-        
         return rentDbConfig;
     }
-    public void rentDbReloadConfig() {
-        if (rentDbConfigFile == null) {
-        	rentDbConfigFile = new File(getDataFolder(), "rentdb.yml");
+    private void rentDbUpdateSettingsVersion() {
+        //See if there is even a config to update
+        if (rentDbConfig != null) {
+            //set flag so we only save once at the end.
+            boolean needToSave = false;
+            
+            //see if it is the original style of the config
+            if (rentDbConfig.getString("general.configVersion") == null) {
+                //we have an older version of the file, so do the update to version 2
+                //Flag that the config file was updated
+                needToSave = true;
+                
+                //Tag it with the correct configVersion
+                rentDbConfig.set("general.configVersion", 2);
+                
+                //Make sure we have a header in our yml file
+                if (rentDbConfig.options().header() == null) {
+                    //set the header 
+                    rentDbConfig.options().header("BuyLand rent dB file.  Used to keep track of how many rentable regions a player has.");
+                }
+
+                //extract the rent section
+                ConfigurationSection rentDbConfigSection = rentDbConfig.getConfigurationSection("user");
+                
+                //make sure it exists
+                if (rentDbConfigSection == null && rentDbConfig.getString("user") == null) {
+                    //we have a brand new file create the base structure
+                    rentDbConfig.addDefault("user.renting", 0);
+                    rentDbConfig.addDefault("user.earned", 0.00);
+                    rentDbConfig.addDefault("user.spent", 0.00);        
+                   
+                }
+                if (rentDbConfig.getString("user.renting") == null) {
+                    //we have an older config file, not a new one, so get each sign and fix it
+                    for (String key : rentDbConfig.getKeys(false)) {
+                        if (!key.equalsIgnoreCase("general") && rentDbConfig.getString(key) != null) {
+                            //save the current count
+                            int value = rentDbConfig.getInt(key);
+                            //remove the old style key
+                            rentDbConfig.set(key, null);
+                            //add the new structure
+                            rentDbConfig.set(key + ".renting", value);
+                            rentDbConfig.set(key + ".earned", 0.00);
+                            rentDbConfig.set(key + ".spent", 0.00);
+                        }
+                    }
+                }
+            }
+            if (rentDbConfig.getString("general.configVersion").equals("2")) {
+                //For now, do nothing, but this space is reserved for future updates.
+                //when there is a version 3, then set the version first
+            }
+
+            if (needToSave) {
+                rentDbSaveConfig();
+            }
         }
+    }
+    public void rentDbReloadConfig() {
         rentDbConfig = YamlConfiguration.loadConfiguration(rentDbConfigFile);
      
         // Look for defaults in the jar
@@ -431,14 +667,8 @@ public class BuyLand extends JavaPlugin {
         if (defConfigStream != null) {
             YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
             rentDbConfig.setDefaults(defConfig);
+            rentDbConfig.options().copyDefaults(true);
         }
-        
-        //Make sure the minimum settings in the file are there with these defaults
-        rentDbConfig.options().header("BuyLand Rent DB File. Used for keeping track of how many rentable plots a user has.");
-        
-        rentDbConfig.addDefault("user.renting", 0);
-        rentDbConfig.addDefault("user.earned", 0.00);
-        rentDbConfig.addDefault("user.spent", 0.00);
     }
     public void rentDbSaveConfig() {
         if (rentDbConfig == null || rentDbConfigFile == null) {
@@ -456,86 +686,285 @@ public class BuyLand extends JavaPlugin {
         //this is a special case as the plugin config is built into bukkit.
         //this is normally accessable by calling this.getConfig(); as is done below.
         this.pluginReloadConfig();        
-        
+        this.pluginUpdateSettingsVersion();
         return this.getConfig();
     }
-    public void pluginReloadConfig() {
-        final FileConfiguration config = this.getConfig();
-        config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
+    private void pluginUpdateSettingsVersion() {
+        FileConfiguration config = this.getConfig();
 
+        //set flag so we only save once at the end.
+        boolean needToSave = false;
+        
+        //see if it is the original style of the config
+        if (config.getString("general.configVersion") == null) {
+            //we have an older version of the file, so do the update to version 1
+            //Flag that the config file was updated
+            needToSave = true;
+            
+            //Tag it with the correct configVersion
+            config.set("general.configVersion", 1);
+            
+            //Make sure we have a header in our yml file
+            if (config.options().header() == null) {
+                //set the header 
+                config.options().header("BuyLand... Besure to make prices have .00 or it may break. Double");
+            }
+
+            if (config.getString("buyland.defaultprice") != null)           config.set("buyland.defaultprice", 100.00);
+            if (config.getString("buyland.percentsellback") != null)        config.set("buyland.percentsellback", 1.0);
+            if (config.getString("buyland.resetlandonsale") != null)        config.set("buyland.resetlandonsale", true);
+            if (config.getString("buyland.landpriority") != null)           config.set("buyland.landpriority", 1);
+            if (config.getString("buyland.usepriceperblock") != null)       config.set("buyland.usepriceperblock", false);
+            if (config.getString("buyland.defaultpriceperblock") != null)   config.set("buyland.defaultpriceperblock", 1.0);
+            if (config.getString("buyland.rentbroadcastmsg") != null)       config.set("buyland.rentbroadcastmsg", true);
+            if (config.getString("buyland.landgreeting") != null)           config.set("buyland.landgreeting", true);
+            if (config.getString("buyland.landgreetingerasemsg") != null)   config.set("buyland.landgreetingerasemsg", false);
+            if (config.getString("buyland.breaksignonbuy") != null)         config.set("buyland.breaksignonbuy", false);
+            if (config.getString("buyland.denyentrytoland") != null)        config.set("buyland.denyentrytoland", false);
+            if (config.getString("buyland.removelwcprotection") != null)    config.set("buyland.removelwcprotection", false);
+            if (config.getString("buyland.defaultrentcostpermin") != null)  config.set("buyland.defaultrentcostpermin", 1.0);
+            if (config.getString("buyland.maxamountofrentland") != null)    config.set("buyland.maxamountofrentland", 1);
+            if (config.getString("buyland.notifyplayerofrenttime") != null) config.set("buyland.notifyplayerofrenttime", true);
+            if (config.getString("buyland.offlinelimitindays") != null)     config.set("buyland.offlinelimitindays", 30);
+            if (config.getString("buyland.offlinelimitenable") != null)     config.set("buyland.offlinelimitenable", true);
+
+            config.options().copyDefaults(true);
+            saveConfig();
+            config = null;
+            config = this.getConfig();
+        }
+        if (config.getString("general.configVersion").equals("1")) {
+            //we have an older version of the file, so do the update to version 2
+            //Flag that the config file was updated
+            needToSave = true;
+            
+            //Tag it with the correct configVersion
+            config.set("general.configVersion", 2);
+            
+            //Convert the general section
+            if (config.getString("buyland.landpriority") != null) {
+                config.set("general.regionPriority", config.getInt("buyland.landpriority"));
+                config.set("buyland.landpriority", null);
+            }
+
+            //Convert the buyland section
+            if (config.getString("buyland.offlinelimitenable") != null) {
+                config.set("buyland.offlineLimit.enable", config.getBoolean("buyland.offlinelimitenable"));
+                config.set("buyland.offlinelimitenable", null);
+            }
+            if (config.getString("buyland.offlinelimitindays") != null) {
+                config.set("buyland.offlineLimit.days", config.getInt("buyland.offlinelimitindays"));
+                config.set("buyland.offlinelimitindays", null);
+            }
+
+            if (config.getString("buyland.defaultprice") != null) {
+                config.set("buyland.onBuyFromBank.price.default", config.getDouble("buyland.defaultprice"));
+                config.set("buyland.defaultprice", null);
+            }
+            if (config.getString("buyland.defaultpriceperblock") != null) {
+                config.set("buyland.onBuyFromBank.price.perBlock", config.getDouble("buyland.defaultpriceperblock"));
+                config.set("buyland.defaultpriceperblock", null);
+            }
+            if (config.getString("buyland.usepriceperblock") != null) {
+                config.set("buyland.onBuyFromBank.price.usePerBlock", config.getBoolean("buyland.usepriceperblock"));
+                config.set("buyland.usepriceperblock", null);
+            }
+            
+            if (config.getString ("buyland.percentsellback") != null) {
+                config.set("buyland.onSaleToBank.price.percent", config.getDouble("buyland.percentsellback"));
+                config.set("buyland.percentsellback", null);
+            }
+            if (config.getString ("buyland.breaksignonbuy") != null) {
+                config.set("buyland.onSaleToBank.breaksign", config.getBoolean("buyland.breaksignonbuy"));
+                config.set("buyland.breaksignonbuy", null);
+            }
+
+            //Split one config into two related to buy and rent
+            if (config.getString("buyland.denyentrytoland") != null) {
+                Boolean value = config.getBoolean("buyland.denyentrytoland");
+                config.set("buyland.onCreate.denyEntry", value);
+                config.set("buyland.onBuyFromBank.denyEntry", value);
+                config.set("buyland.onSaleToBank.denyEntry", value);
+                config.set("rentland.onCreate.denyEntry", value);
+                config.set("rentland.onRentBegin.denyEntry", value);
+                config.set("rentland.onRentExpire.denyEntry", value);
+                config.set("buyland.denyentrytoland", null);
+            }
+            if (config.getString("buyland.landgreeting") != null) {
+                Boolean value = config.getBoolean("buyland.landgreeting");
+                config.set("buyland.onCreate.greetMessage.display", value);
+                config.set("buyland.onBuyFromBank.greetMessage.display", value);
+                config.set("buyland.onSaleToBank.greetMessage.display", value);
+                config.set("rentland.onCreate.greetMessage.display", value);
+                config.set("rentland.onRentBegin.greetMessage.display", value);
+                config.set("rentland.onRentExpire.greetMessage.display", value);
+                config.set("buyland.landgreeting", null);
+            }
+            if (config.getString("buyland.landgreetingerasemsg") != null) {
+                Boolean value = config.getBoolean("buyland.landgreetingerasemsg"); //only available if display = false
+                config.set("buyland.onCreate.greetMessage.erase", value); //only available if display = false
+                config.set("buyland.onBuyFromBank.greetMessage.erase", value); //only available if display = false
+                config.set("buyland.onSaleToBank.greetMessage.erase", value); //only available if display = false
+                config.set("rentland.onCreate.greetMessage.erase", value); //only available if display = false
+                config.set("rentland.onRentBegin.greetMessage.erase", value); //only available if display = false
+                config.set("rentland.onRentExpire.greetMessage.erase", value); //only available if display = false
+                config.set("buyland.landgreetingerasemsg", null);
+            }
+            if (config.getString("buyland.resetlandonsale") != null) {
+                Boolean value = config.getBoolean("buyland.resetlandonsale");
+                config.set("buyland.onCreate.saveSchematic", value);
+                config.set("buyland.onBuyFromBank.saveSchematic", value);
+                config.set("buyland.onBuyFromBank.placeSchematic", !value);
+                config.set("buyland.onSaleToBank.saveSchematic", !value);
+                config.set("buyland.onSaleToBank.placeSchematic", value);
+                config.set("rentland.onCreate.saveSchematic", value);
+                config.set("rentland.onRentBegin.saveSchematic", value);
+                config.set("rentland.onRentBegin.placeSchematic", !value);
+                config.set("rentland.onRentExpire.saveSchematic", !value);
+                config.set("rentland.onRentExpire.placeSchematic", value);
+                config.set("buyland.resetlandonsale", null);
+            }
+            if (config.getString("buyland.removelwcprotection") != null) {
+                Boolean value = config.getBoolean("buyland.removelwcprotection");
+                config.set("buyland.onCreate.removelwcprotection", value);
+                config.set("buyland.onBuyFromBank.removelwcprotection", value);
+                config.set("buyland.onSaleToBank.removelwcprotection", value);
+                config.set("rentland.onCreate.removelwcprotection", value);
+                config.set("rentland.onRentBegin.removelwcprotection", value);
+                config.set("rentland.onRentExpire.removelwcprotection", value);
+                config.set("buyland.removelwcprotection", null);
+            }
+            
+            //convert the rentland section
+            if (config.getString("buyland.defaultrentcostpermin") != null) {
+                config.set("rentland.onCreate.price.perMinDefault", config.getDouble("buyland.defaultrentcostpermin"));
+                config.set("buyland.defaultrentcostpermin", null);
+            }
+            if (config.getString("buyland.maxamountofrentland") != null) {
+                config.set("rentland.onRentBegin.maxRegions", config.getInt("buyland.maxamountofrentland"));
+                config.set("buyland.maxamountofrentland", null);
+            }
+            if (config.getString("buyland.rentbroadcastmsg") != null) {
+                config.set("rentland.onRentExpire.broadcast.available", config.getBoolean("buyland.rentbroadcastmsg"));
+                config.set("buyland.rentbroadcastmsg", null);
+            }
+            if (config.getString("buyland.notifyplayerofrenttime") != null) {
+                config.set("rentland.onPlayerJoin.notifyOfTimeLeft", config.getBoolean("buyland.notifyplayerofrenttime"));
+                config.set("buyland.notifyplayerofrenttime", null);
+            }
+
+            //Set everything's default to make sure it exists
+            
+            //general config
+            config.addDefault("general.regionPriority", 1);
+            config.addDefault("general.sign.showBuyLand", true);
+            
+            //buyland stuff
+            config.addDefault("buyland.onCreate.denyEntry", false);
+            config.addDefault("buyland.onCreate.greetMessage.display", true);
+            config.addDefault("buyland.onCreate.greetMessage.erase", false); //only available if display = false
+            config.addDefault("buyland.onCreate.saveSchematic", true);
+            config.addDefault("buyland.onCreate.removelwcprotection", false);
+            config.addDefault("buyland.onCreate.worldGuardFlags.default", "");
+            config.addDefault("buyland.onBuyFromBank.breakSign", false);
+            config.addDefault("buyland.onBuyFromBank.denyEntry", false);
+            config.addDefault("buyland.onBuyFromBank.greetMessage.display", true);
+            config.addDefault("buyland.onBuyFromBank.greetMessage.erase", false); //only available if display = false
+            config.addDefault("buyland.onBuyFromBank.placeSchematic", false);
+            config.addDefault("buyland.onBuyFromBank.saveSchematic", true);
+            config.addDefault("buyland.onBuyFromBank.price.default", 100.00);
+            config.addDefault("buyland.onBuyFromBank.price.perBlock", 1.00);
+            config.addDefault("buyland.onBuyFromBank.price.usePerBlock", false);
+            config.addDefault("buyland.onBuyFromBank.removelwcprotection", false);
+            config.addDefault("buyland.onBuyFromBank.worldGuardFlags.default", "");
+            config.addDefault("buyland.onSaleToBank.denyEntry", false);
+            config.addDefault("buyland.onSaleToBank.greetMessage.display", true);
+            config.addDefault("buyland.onSaleToBank.greetMessage.erase", false); //only available if display = false
+            config.addDefault("buyland.onSaleToBank.placeSchematic", true);
+            config.addDefault("buyland.onSaleToBank.saveSchematic", false);
+            config.addDefault("buyland.onSaleToBank.price.percent", 1.00);
+            config.addDefault("buyland.onSaleToBank.removelwcprotection", false);
+            config.addDefault("buyland.onSaleToBank.worldGuardFlags.default", "");
+            config.addDefault("buyland.offlineLimit.days", 30);
+            config.addDefault("buyland.offlineLimit.enable", true);
+            config.addDefault("buyland.offlineLimit.checkMembers", false); //default to false so it acts the same way as before.
+            
+            //rentland stuff
+            config.addDefault("rentland.onPlayerJoin.notifyOfTimeLeft", true);
+            config.addDefault("rentland.onCreate.denyEntry", false);
+            config.addDefault("rentland.onCreate.greetMessage.display", true);
+            config.addDefault("rentland.onCreate.greetMessage.erase", false); //only available if display = false
+            config.addDefault("rentland.onCreate.saveSchematic", true);
+            config.addDefault("rentland.onCreate.removelwcprotection", false);
+            config.addDefault("rentland.onCreate.worldGuardFlags.default", "");
+            config.addDefault("rentland.onCreate.price.perMinDefault", 1.0);
+            config.addDefault("rentland.onRentBegin.denyEntry", false);
+            config.addDefault("rentland.onRentBegin.greetMessage.display", true);
+            config.addDefault("rentland.onRentBegin.greetMessage.erase", false); //only available if display = false
+            config.addDefault("rentland.onRentBegin.removelwcprotection", false);
+            config.addDefault("rentland.onRentBegin.placeSchematic", false);
+            config.addDefault("rentland.onRentBegin.saveSchematic", true);
+            config.addDefault("rentland.onRentBegin.worldGuardFlags.default", "");
+            config.addDefault("rentland.onRentExtend.denyEntry", false);
+            config.addDefault("rentland.onRentExtend.removelwcprotection", false);
+            config.addDefault("rentland.onRentExtend.placeSchematic", false);
+            config.addDefault("rentland.onRentExtend.saveSchematic", false);
+            config.addDefault("rentland.onRentExtend.worldGuardFlags.default", "");
+            config.addDefault("rentland.onRentExpire.denyEntry", false);
+            config.addDefault("rentland.onRentExpire.greetMessage.display", true);
+            config.addDefault("rentland.onRentExpire.greetMessage.erase", false); //only available if display = false
+            config.addDefault("rentland.onRentExpire.removelwcprotection", false);
+            config.addDefault("rentland.onRentExpire.placeSchematic", true);
+            config.addDefault("rentland.onRentExpire.saveSchematic", false);
+            config.addDefault("rentland.onRentExpire.broadcast.available", true);
+            config.addDefault("rentland.onRentExpire.worldGuardFlags.default", "");
+            config.addDefault("rentland.onRentBegin.maxRegions", 1);
+            
+            config.options().copyDefaults(true);        
+            saveConfig();
+            config = this.getConfig();
+        }
+        if (config.getString("general.configVersion").equals("2")) {
+            //we have an older version of the file, so do the update to version 3
+            //Flag that the config file was updated
+            needToSave = true;
+            
+            //Tag it with the correct configVersion
+            config.set("general.configVersion", 3);
+
+            config.addDefault("general.sign.showBuyLand", true);
+            
+            config.addDefault("buyland.allowedWorldGuardFlags.example", 0.0);
+
+            config.addDefault("rentland.allowedWorldGuardFlags.example", 0.0);
+
+            config.options().copyDefaults(true);
+            saveConfig();
+            config = this.getConfig();
+        }
+        if (config.getString("general.configVersion").equals("3")) {
+            //we have an older version of the file, so do the update to version 4
+        }
+        
         //Unused config
         //config.addDefault("buyland.maxamountofland", 1);
         //config.addDefault("buyland.breaksignonbuy", false);
-
-        //general config
-        config.addDefault("general.regionPriority", 1);
-        config.addDefault("general.configVersion", 2);
-        config.addDefault("general.sign.showBuyLand", true);
         
-        //buyland stuff
-        config.addDefault("buyland.allowedWorldGuardFlags.example", 0.0);
-        config.addDefault("buyland.onCreate.denyEntry", false);
-        config.addDefault("buyland.onCreate.greetMessage.display", true);
-        config.addDefault("buyland.onCreate.greetMessage.erase", false); //only available if display = false
-        config.addDefault("buyland.onCreate.saveSchematic", true);
-        config.addDefault("buyland.onCreate.removelwcprotection", false);
-        config.addDefault("buyland.onCreate.worldGuardFlags.default", "");
-        config.addDefault("buyland.onBuyFromBank.breakSign", false);
-        config.addDefault("buyland.onBuyFromBank.denyEntry", false);
-        config.addDefault("buyland.onBuyFromBank.greetMessage.display", true);
-        config.addDefault("buyland.onBuyFromBank.greetMessage.erase", false); //only available if display = false
-        config.addDefault("buyland.onBuyFromBank.placeSchematic", false);
-        config.addDefault("buyland.onBuyFromBank.saveSchematic", true);
-        config.addDefault("buyland.onBuyFromBank.price.default", 100.00);
-        config.addDefault("buyland.onBuyFromBank.price.perBlock", 1.00);
-        config.addDefault("buyland.onBuyFromBank.price.usePerBlock", false);
-        config.addDefault("buyland.onBuyFromBank.removelwcprotection", false);
-        config.addDefault("buyland.onBuyFromBank.worldGuardFlags.default", "");
-        config.addDefault("buyland.onSaleToBank.denyEntry", false);
-        config.addDefault("buyland.onSaleToBank.greetMessage.display", true);
-        config.addDefault("buyland.onSaleToBank.greetMessage.erase", false); //only available if display = false
-        config.addDefault("buyland.onSaleToBank.placeSchematic", true);
-        config.addDefault("buyland.onSaleToBank.saveSchematic", false);
-        config.addDefault("buyland.onSaleToBank.price.percent", 1.00);
-        config.addDefault("buyland.onSaleToBank.removelwcprotection", false);
-        config.addDefault("buyland.onSaleToBank.worldGuardFlags.default", "");
-        config.addDefault("buyland.offlineLimit.days", 30);
-        config.addDefault("buyland.offlineLimit.enable", true);
-        config.addDefault("buyland.offlineLimit.checkMembers", false); //default to false so it acts the same way as before.
+        if (needToSave) {
+            saveConfig();
+        }
+    }
+    public void pluginReloadConfig() {
+        final FileConfiguration config = this.getConfig();
         
-        //rentland stuff
-        config.addDefault("rentland.allowedWorldGuardFlags.example", 0.0);
-        config.addDefault("rentland.onPlayerJoin.notifyOfTimeLeft", true);
-        config.addDefault("rentland.onCreate.denyEntry", false);
-        config.addDefault("rentland.onCreate.greetMessage.display", true);
-        config.addDefault("rentland.onCreate.greetMessage.erase", false); //only available if display = false
-        config.addDefault("rentland.onCreate.saveSchematic", true);
-        config.addDefault("rentland.onCreate.removelwcprotection", false);
-        config.addDefault("rentland.onCreate.worldGuardFlags.default", "");
-        config.addDefault("rentland.onCreate.price.perMinDefault", 1.0);
-        config.addDefault("rentland.onRentBegin.denyEntry", false);
-        config.addDefault("rentland.onRentBegin.greetMessage.display", true);
-        config.addDefault("rentland.onRentBegin.greetMessage.erase", false); //only available if display = false
-        config.addDefault("rentland.onRentBegin.removelwcprotection", false);
-        config.addDefault("rentland.onRentBegin.placeSchematic", false);
-        config.addDefault("rentland.onRentBegin.saveSchematic", true);
-        config.addDefault("rentland.onRentBegin.worldGuardFlags.default", "");
-        config.addDefault("rentland.onRentExtend.denyEntry", false);
-        config.addDefault("rentland.onRentExtend.removelwcprotection", false);
-        config.addDefault("rentland.onRentExtend.placeSchematic", false);
-        config.addDefault("rentland.onRentExtend.saveSchematic", false);
-        config.addDefault("rentland.onRentExtend.worldGuardFlags.default", "");
-        config.addDefault("rentland.onRentExpire.denyEntry", false);
-        config.addDefault("rentland.onRentExpire.greetMessage.display", true);
-        config.addDefault("rentland.onRentExpire.greetMessage.erase", false); //only available if display = false
-        config.addDefault("rentland.onRentExpire.removelwcprotection", false);
-        config.addDefault("rentland.onRentExpire.placeSchematic", true);
-        config.addDefault("rentland.onRentExpire.saveSchematic", false);
-        config.addDefault("rentland.onRentExpire.broadcast.available", true);
-        config.addDefault("rentland.onRentExpire.worldGuardFlags.default", "");
-        config.addDefault("rentland.onRentBegin.maxRegions", 1);
-        
-        config.options().copyDefaults(true);        
+        // Look for defaults in the jar
+        InputStream defConfigStream = this.getResource("config.yml");
+        if (defConfigStream != null) {
+            YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+            config.setDefaults(defConfig);
+            config.options().copyDefaults(true);
+            saveConfig();
+        }
     }
     
     @Override
@@ -591,8 +1020,8 @@ public class BuyLand extends JavaPlugin {
     	signGetConfig();       //Load or create the defaults
     	signSaveConfig();      //Save to disk
     	
-    	getCustomConfig();     //Load or create the defaults
-    	saveCustomConfig();    //Save to disk
+    	customGetConfig();     //Load or create the defaults
+    	customSaveConfig();    //Save to disk
     	
     	rentDbGetConfig();     //Load or create the defaults
     	rentDbSaveConfig();    //Save to disk
@@ -602,7 +1031,6 @@ public class BuyLand extends JavaPlugin {
 
     	//fix the files if necessary
         onEnable_fixRegionNames();
-        onEnable_fixConfigSettings();
 
     	//Load the general plugin config
     	final FileConfiguration config = pluginGetConfig();
@@ -783,128 +1211,6 @@ public class BuyLand extends JavaPlugin {
         }
         signSaveConfig();
         
-    }
-    private void onEnable_fixConfigSettings() {
-        final FileConfiguration config = pluginGetConfig();
-
-        //Convert the general section
-        if (config.getString("buyland.landpriority") != null) {
-            config.set("general.regionPriority", config.getInt("buyland.landpriority"));
-            config.set("buyland.landpriority", null);
-        }
-
-        //Convert the buyland section
-        if (config.getString("buyland.offlinelimitenable") != null) {
-            config.set("buyland.offlineLimit.enable", config.getBoolean("buyland.offlinelimitenable"));
-            config.set("buyland.offlinelimitenable", null);
-        }
-        if (config.getString("buyland.offlinelimitindays") != null) {
-            config.set("buyland.offlineLimit.days", config.getInt("buyland.offlinelimitindays"));
-            config.set("buyland.offlinelimitindays", null);
-        }
-
-        if (config.getString("buyland.defaultprice") != null) {
-            config.set("buyland.onBuyFromBank.price.default", config.getDouble("buyland.defaultprice"));
-            config.set("buyland.defaultprice", null);
-        }
-        if (config.getString("buyland.defaultpriceperblock") != null) {
-            config.set("buyland.onBuyFromBank.price.perBlock", config.getDouble("buyland.defaultpriceperblock"));
-            config.set("buyland.defaultpriceperblock", null);
-        }
-        if (config.getString("buyland.usepriceperblock") != null) {
-            config.set("buyland.onBuyFromBank.price.usePerBlock", config.getBoolean("buyland.usepriceperblock"));
-            config.set("buyland.usepriceperblock", null);
-        }
-        
-        if (config.getString ("buyland.percentsellback") != null) {
-            config.set("buyland.onSaleToBank.price.percent", config.getDouble("buyland.percentsellback"));
-            config.set("buyland.percentsellback", null);
-        }
-        if (config.getString ("buyland.breaksignonbuy") != null) {
-            config.set("buyland.onSaleToBank.breaksign", config.getBoolean("buyland.breaksignonbuy"));
-            config.set("buyland.breaksignonbuy", null);
-        }
-
-        //Split one config into two related to buy and rent
-        if (config.getString("buyland.denyentrytoland") != null) {
-            Boolean value = config.getBoolean("buyland.denyentrytoland");
-            config.set("buyland.onCreate.denyEntry", value);
-            config.set("buyland.onBuyFromBank.denyEntry", value);
-            config.set("buyland.onSaleToBank.denyEntry", value);
-            config.set("rentland.onCreate.denyEntry", value);
-            config.set("rentland.onRentBegin.denyEntry", value);
-            config.set("rentland.onRentExpire.denyEntry", value);
-            config.set("buyland.denyentrytoland", null);
-        }
-        if (config.getString("buyland.landgreeting") != null) {
-            Boolean value = config.getBoolean("buyland.landgreeting");
-            config.set("buyland.onCreate.greetMessage.display", value);
-            config.set("buyland.onBuyFromBank.greetMessage.display", value);
-            config.set("buyland.onSaleToBank.greetMessage.display", value);
-            config.set("rentland.onCreate.greetMessage.display", value);
-            config.set("rentland.onRentBegin.greetMessage.display", value);
-            config.set("rentland.onRentExpire.greetMessage.display", value);
-            config.set("buyland.landgreeting", null);
-        }
-        if (config.getString("buyland.landgreetingerasemsg") != null) {
-            Boolean value = config.getBoolean("buyland.landgreetingerasemsg");
-            config.set("buyland.onCreate.greetMessage.erase", value);
-            config.set("buyland.onBuyFromBank.greetMessage.erase", value);
-            config.set("buyland.onSaleToBank.greetMessage.erase", value);
-            config.set("rentland.onCreate.greetMessage.erase", value);
-            config.set("rentland.onRentBegin.greetMessage.erase", value);
-            config.set("rentland.onRentExpire.greetMessage.erase", value);
-            config.set("buyland.landgreetingerasemsg", null);
-        }
-        if (config.getString("buyland.resetlandonsale") != null) {
-            Boolean value = config.getBoolean("buyland.resetlandonsale");
-            config.set("buyland.onCreate.saveSchematic", value);
-            config.set("buyland.onBuyFromBank.saveSchematic", value);
-            config.set("buyland.onBuyFromBank.placeSchematic", !value);
-            config.set("buyland.onSaleToBank.saveSchematic", !value);
-            config.set("buyland.onSaleToBank.placeSchematic", value);
-            config.set("rentland.onCreate.saveSchematic", value);
-            config.set("rentland.onRentBegin.saveSchematic", value);
-            config.set("rentland.onRentBegin.placeSchematic", !value);
-            config.set("rentland.onRentExpire.saveSchematic", !value);
-            config.set("rentland.onRentExpire.placeSchematic", value);
-            config.set("buyland.resetlandonsale", null);
-        }
-        if (config.getString("buyland.removelwcprotection") != null) {
-            Boolean value = config.getBoolean("buyland.removelwcprotection");
-            config.set("buyland.onCreate.removelwcprotection", value);
-            config.set("buyland.onBuyFromBank.removelwcprotection", value);
-            config.set("buyland.onSaleToBank.removelwcprotection", value);
-            config.set("rentland.onCreate.removelwcprotection", value);
-            config.set("rentland.onRentBegin.removelwcprotection", value);
-            config.set("rentland.onRentExpire.removelwcprotection", value);
-            config.set("buyland.removelwcprotection", null);
-        }
-        
-        //convert the rentland section
-        if (config.getString("buyland.defaultrentcostpermin") != null) {
-            config.set("rentland.onCreate.price.perMinDefault", config.getDouble("buyland.defaultrentcostpermin"));
-            config.set("buyland.defaultrentcostpermin", null);
-        }
-        if (config.getString("buyland.maxamountofrentland") != null) {
-            config.set("rentland.onRentBegin.maxRegions", config.getInt("buyland.maxamountofrentland"));
-            config.set("buyland.maxamountofrentland", null);
-        }
-        if (config.getString("buyland.rentbroadcastmsg") != null) {
-            config.set("rentland.onRentExpire.broadcast.available", config.getBoolean("buyland.rentbroadcastmsg"));
-            config.set("buyland.rentbroadcastmsg", null);
-        }
-        if (config.getString("buyland.notifyplayerofrenttime") != null) {
-            config.set("rentland.onPlayerJoin.notifyOfTimeLeft", config.getBoolean("buyland.notifyplayerofrenttime"));
-            config.set("buyland.notifyplayerofrenttime", null);
-        }
-        
-        File configFile = new File(getDataFolder(), "config.yml");
-        try {
-            config.save(configFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }        
     }
 
     /**
@@ -2039,8 +2345,8 @@ public class BuyLand extends JavaPlugin {
                         }
                         
                         //Save the config files
-                        saveCustomConfig();
-                        reloadCustomConfig();
+                        customSaveConfig();
+                        customReloadConfig();
                         
                         //Change Sign to indicate it is for sale
                         signDoStateAction(player, protectedRegion, signState.FOR_SALE, "set");
@@ -2189,7 +2495,7 @@ public class BuyLand extends JavaPlugin {
                             //Update the number of regions the player currently owns plus amount spent and earned
                             ownUpdateRegionCount(playerName, +1, 0.00, regionPrice);
                            
-                            saveCustomConfig();
+                            customSaveConfig();
     
                             //Set the owner of the land
                             DefaultDomain dd = new DefaultDomain();
@@ -2228,16 +2534,16 @@ public class BuyLand extends JavaPlugin {
         //make sure it is lower case
         playerName = playerName.toLowerCase();
         //Make sure we are on the new format
-        if (!getCustomConfig().isSet(playerName + ".own")) {
+        if (!customGetConfig().isSet(playerName + ".own")) {
             //save the current value
-            int currentValue = getCustomConfig().getInt(playerName);
+            int currentValue = customGetConfig().getInt(playerName);
             //remove the current entry
-            getCustomConfig().set(playerName, null);
+            customGetConfig().set(playerName, null);
             
             //convert to the new format since this path does not exist
-            getCustomConfig().set(playerName + ".own", currentValue);
-            getCustomConfig().set(playerName + ".earned", 0.00);
-            getCustomConfig().set(playerName + ".spent", 0.00);
+            customGetConfig().set(playerName + ".own", currentValue);
+            customGetConfig().set(playerName + ".earned", 0.00);
+            customGetConfig().set(playerName + ".spent", 0.00);
             
         }
         //Record the new number of regions the player owns
@@ -2245,11 +2551,11 @@ public class BuyLand extends JavaPlugin {
         if (ownAmount < 0) {
             ownAmount = 0;
         }
-        getCustomConfig().set(playerName + ".own", ownAmount);
+        customGetConfig().set(playerName + ".own", ownAmount);
         //Record the new amount earned by the player
-        getCustomConfig().set(playerName + ".earned", getCustomConfig().getDouble(playerName + ".earned") + earnedDifference);
+        customGetConfig().set(playerName + ".earned", customGetConfig().getDouble(playerName + ".earned") + earnedDifference);
         //Record the new amount spent by the player
-        getCustomConfig().set(playerName + ".spent", getCustomConfig().getDouble(playerName + ".spent") + spentDifference);
+        customGetConfig().set(playerName + ".spent", customGetConfig().getDouble(playerName + ".spent") + spentDifference);
     }
     /**
      * Return the purchase price of a given region
@@ -2322,7 +2628,7 @@ public class BuyLand extends JavaPlugin {
      * @return The maximum number of regions a player can own
      */
      public int ownGetPlayerMaxNumberOfRegions(Player player) {
-        int currentNumberPlayerOwnedRegions = getCustomConfig().getInt(player.getName());
+        int currentNumberPlayerOwnedRegions = customGetConfig().getInt(player.getName());
         
         for (int loopVal = 50; loopVal >= currentNumberPlayerOwnedRegions; loopVal--) {
             if (player.hasPermission("buyland.maxland."+Integer.toString(loopVal))) {
@@ -2340,20 +2646,20 @@ public class BuyLand extends JavaPlugin {
         String playerName = player.getName().toLowerCase();
         
         //Make sure we are on the new format
-        if (!getCustomConfig().isSet(playerName + ".own")) {
+        if (!customGetConfig().isSet(playerName + ".own")) {
             //save the current value
-            int currentValue = getCustomConfig().getInt(playerName);
+            int currentValue = customGetConfig().getInt(playerName);
             //remove the current entry
-            getCustomConfig().set(playerName, null);
+            customGetConfig().set(playerName, null);
             
             //convert to the new format since this path does not exist
-            getCustomConfig().set(playerName + ".own", currentValue);
-            getCustomConfig().set(playerName + ".earned", 0.00);
-            getCustomConfig().set(playerName + ".spent", 0.00);
+            customGetConfig().set(playerName + ".own", currentValue);
+            customGetConfig().set(playerName + ".earned", 0.00);
+            customGetConfig().set(playerName + ".spent", 0.00);
             
         }
 
-        int currentNumberPlayerOwnedRegions = getCustomConfig().getInt(playerName + ".own");
+        int currentNumberPlayerOwnedRegions = customGetConfig().getInt(playerName + ".own");
         if (currentNumberPlayerOwnedRegions < 0) currentNumberPlayerOwnedRegions = 0;
         
         //   Loop through all the permission nodes from what the player currently owns to the max.

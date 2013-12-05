@@ -58,7 +58,7 @@ public class BlCommandListenerBuylandTop implements CommandExecutor {
                 //See if the player has permission to do the command
                 if (player.hasPermission("buyland.top") || player.hasPermission("buyland.all")) {
                     if (argType.equalsIgnoreCase("owners")) {
-                        FileConfiguration configOwn = plugin.getCustomConfig();
+                        FileConfiguration configOwn = plugin.customGetConfig();
                         HashMap<String, Integer> rankOwn = new HashMap<String, Integer>();
                         for (String key : configOwn.getKeys(true)) {
                             if (!key.substring(0, 4).equalsIgnoreCase("user") && key.contains(".own")) rankOwn.put(key.substring(0, key.length()-4), configOwn.getInt(key));
@@ -84,7 +84,7 @@ public class BlCommandListenerBuylandTop implements CommandExecutor {
                             plugin.sendMessageInfo(sender, key + " - " + String.valueOf(result.get(key)) + " regions");
                         }
                     } else if (argType.equalsIgnoreCase("cashspent")) {
-                        FileConfiguration configOwn = plugin.getCustomConfig();
+                        FileConfiguration configOwn = plugin.customGetConfig();
                         FileConfiguration configRent = plugin.rentDbGetConfig();
                         HashMap<String, Double>  rankSpent = new HashMap<String, Double>();
                         for (String key : configOwn.getKeys(true)) {

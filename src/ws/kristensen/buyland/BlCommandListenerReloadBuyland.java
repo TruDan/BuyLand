@@ -57,7 +57,7 @@ public class BlCommandListenerReloadBuyland implements CommandExecutor {
             //do reload if allowed
             if (allowReload) {
                 plugin.reloadConfig();  
-                plugin.reloadCustomConfig();
+                plugin.customReloadConfig();
                 plugin.languageReloadConfig();
                 plugin.rentReloadConfig();
                 plugin.rentDbReloadConfig();

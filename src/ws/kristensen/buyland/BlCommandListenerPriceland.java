@@ -89,7 +89,7 @@ public class BlCommandListenerPriceland implements CommandExecutor {
                                 plugin.sendMessageInfo(sender, String.format(ChatColor.translateAlternateColorCodes('&', plugin.languageGetConfig().getString("buyland.price.price")), BuyLand.econ.format(economyResponse.balance)));
 
                                 //Get the number of regions the player already owns
-                                int currentNumberPlayerOwnedRegions = plugin.getCustomConfig().getInt(playerName);
+                                int currentNumberPlayerOwnedRegions = plugin.customGetConfig().getInt(playerName);
 
                                 //Get the maximum number of regions the player can own
                                 int maximumNumberRegionsPlayerCanOwn = plugin.ownGetPlayerMaxNumberOfRegions(player);
